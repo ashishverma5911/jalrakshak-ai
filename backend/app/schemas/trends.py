@@ -15,18 +15,20 @@ class RainfallTrendsResponse(BaseModel):
     location_name: str
     aggregation: str
     time_period: str
-    total_rainfall_mm: float
-    historical_baseline_avg_mm: float
-    wet_days_count: int
-    max_daily_rainfall_mm: float
+    total_rainfall_mm: Optional[float] = None
+    historical_baseline_avg_mm: Optional[float] = None
+    wet_days_count: Optional[int] = None
+    max_daily_rainfall_mm: Optional[float] = None
     max_daily_date: Optional[str] = None
-    departure_percentage: float
+    departure_percentage: Optional[float] = None
     data_coverage_pct: float = 100.0
-    observation_window: str = "Observational records (1991–2024 reference)"
+    is_data_available: bool = True
+    observation_window: str = "Observational records (1991–2026 reference)"
     disclaimer: str = (
         "Historical observational trends only. "
         "Does not represent or imply a predictive weather forecast."
     )
-    is_demo_data: bool = True
+    data_mode: str = "CACHED_VERIFIED"
+    is_demo_data: bool = False
     sources: List[str]
     series: List[RainfallSeriesPoint]

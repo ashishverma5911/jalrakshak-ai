@@ -14,11 +14,12 @@ ingestion_service = DataIngestionService()
 def get_rainfall_trends(
     location: str = Query("gorakhpur", description="District identifier (gorakhpur or mahoba)"),
     range: str = Query("30", description="Time window days: 7, 30, 90, or 365"),
-    aggregation: str = Query("daily", description="Time aggregation: daily, weekly, monthly")
+    aggregation: str = Query("daily", description="Time aggregation: daily, weekly, monthly"),
+    mode: str = Query("demo", description="Data mode: 'demo' or 'verified'")
 ) -> RainfallTrendsResponse:
     try:
         district_info = ingestion_service.get_district_info(location)
-        df = ingestion_service.load_daily_rainfall(location)
+        df = ingestion_service.load_daily_rainfall(location, mode=mode)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -144,22 +145,33 @@ def get_rainfall_trends(
                     )
                 )
 
-    total_rain = round(float(sub_df["rainfall_mm"].sum()), 1)
-    wet_days = count_wet_days(sub_df, threshold_mm=2.5)
-
-    max_daily_val = 0.0
-    max_daily_dt = None
-    if not sub_df.empty:
-        max_idx = sub_df["rainfall_mm"].idxmax()
-        max_daily_val = float(sub_df.loc[max_idx, "rainfall_mm"])
-        max_daily_dt = sub_df.loc[max_idx, "date"].strftime("%Y-%m-%d")
-
+    valid_sub = sub_df["rainfall_mm"].dropna()
     baseline_sum = sum(p.historical_avg_mm for p in series_points)
-    departure_pct = (
-        round(((total_rain - baseline_sum) / baseline_sum) * 100.0, 1)
-        if baseline_sum > 0
-        else 0.0
-    )
+
+    if valid_sub.empty:
+        total_rain = None
+        wet_days = None
+        max_daily_val = None
+        max_daily_dt = None
+        departure_pct = None
+        data_coverage_pct = 0.0
+        is_data_avail = False
+    else:
+        total_rain = round(float(valid_sub.sum()), 1)
+        wet_days = count_wet_days(sub_df, threshold_mm=2.5)
+        max_idx = valid_sub.idxmax()
+        max_daily_val = float(valid_sub.loc[max_idx])
+        max_daily_dt = sub_df.loc[max_idx, "date"].strftime("%Y-%m-%d")
+        departure_pct = (
+            round(((total_rain - baseline_sum) / baseline_sum) * 100.0, 1)
+            if baseline_sum > 0
+            else 0.0
+        )
+        data_coverage_pct = round((len(valid_sub) / len(sub_df)) * 100.0, 1) if not sub_df.empty else 0.0
+        is_data_avail = True
+
+    is_demo = (mode == "demo")
+    data_mode = "DEMONSTRATION" if is_demo else "CACHED_VERIFIED"
 
     return RainfallTrendsResponse(
         location_id=district_info["id"],
@@ -169,10 +181,13 @@ def get_rainfall_trends(
         total_rainfall_mm=total_rain,
         historical_baseline_avg_mm=round(baseline_sum, 1),
         wet_days_count=wet_days,
-        max_daily_rainfall_mm=round(max_daily_val, 1),
+        max_daily_rainfall_mm=round(max_daily_val, 1) if max_daily_val is not None else None,
         max_daily_date=max_daily_dt,
         departure_percentage=departure_pct,
-        is_demo_data=True,
+        data_coverage_pct=data_coverage_pct,
+        is_data_available=is_data_avail,
+        data_mode=data_mode,
+        is_demo_data=is_demo,
         sources=["CHIRPS Daily Station Blended v2.0", "NASA GPM IMERG Late Run"],
         series=series_points,
     )

@@ -9,12 +9,15 @@ def calculate_cumulative_rainfall(
     reference_date: Optional[str] = None,
     date_col: str = "date",
     val_col: str = "rainfall_mm",
-) -> float:
+) -> Optional[float]:
     """
     Computes total cumulative rainfall (mm) over the last `window_days` preceding `reference_date`.
+    Preserves genuine observed zero rainfall as 0.0.
+    Returns None if dataset is empty or all observations in window are missing/null.
+    Excludes missing values from the summation.
     """
     if df.empty:
-        return 0.0
+        return None
 
     df_sorted = df.sort_values(by=date_col).copy()
     if reference_date:
@@ -22,21 +25,27 @@ def calculate_cumulative_rainfall(
         df_sorted = df_sorted[df_sorted[date_col] <= ref_dt]
 
     if df_sorted.empty:
-        return 0.0
+        return None
 
     recent_slice = df_sorted.tail(window_days)
-    return round(float(recent_slice[val_col].sum()), 2)
+    valid_slice = recent_slice[val_col].dropna()
+    if valid_slice.empty:
+        return None
+
+    return round(float(valid_slice.sum()), 2)
 
 def calculate_rainfall_anomaly(
-    observed_mm: float,
+    observed_mm: Optional[float],
     baseline_mean_mm: float,
-) -> float:
+) -> Optional[float]:
     """
     Percentage anomaly relative to historical baseline:
     ((Observed - Baseline) / Baseline) * 100
+    Returns None if observed_mm is None or baseline <= 0.
+    Preserves genuine observed zero rainfall (0.0) -> -100.0%.
     """
-    if baseline_mean_mm <= 0:
-        return 0.0
+    if observed_mm is None or baseline_mean_mm <= 0:
+        return None
     return round(((observed_mm - baseline_mean_mm) / baseline_mean_mm) * 100.0, 1)
 
 def count_wet_days(
@@ -44,29 +53,40 @@ def count_wet_days(
     threshold_mm: float = 2.5,
     window_days: Optional[int] = None,
     val_col: str = "rainfall_mm",
-) -> int:
+) -> Optional[int]:
     """
     Count of days with rainfall >= threshold_mm (IMD standard defines wet day >= 2.5mm).
+    Returns None if dataset has no valid observations in window.
+    Excludes missing values.
     """
     if df.empty:
-        return 0
+        return None
     sub_df = df.tail(window_days) if window_days else df
-    return int((sub_df[val_col] >= threshold_mm).sum())
+    valid_vals = sub_df[val_col].dropna()
+    if valid_vals.empty:
+        return None
+    return int((valid_vals >= threshold_mm).sum())
 
 def calculate_max_consecutive_dry_days(
     df: pd.DataFrame,
     dry_threshold_mm: float = 1.0,
     window_days: Optional[int] = None,
     val_col: str = "rainfall_mm",
-) -> int:
+) -> Optional[int]:
     """
     Computes maximum consecutive days where daily rainfall is below dry_threshold_mm (< 1.0mm).
+    Returns None if dataset has no valid observations.
+    Excludes missing values.
     """
     if df.empty:
-        return 0
+        return None
 
     sub_df = df.tail(window_days) if window_days else df
-    is_dry = (sub_df[val_col] < dry_threshold_mm).astype(int).values
+    valid_vals = sub_df[val_col].dropna()
+    if valid_vals.empty:
+        return None
+
+    is_dry = (valid_vals < dry_threshold_mm).astype(int).values
 
     max_dry = 0
     current_dry = 0
@@ -81,11 +101,15 @@ def calculate_max_consecutive_dry_days(
 
 def calculate_historical_percentile(
     series: pd.Series,
-    target_value: float
-) -> float:
+    target_value: Optional[float]
+) -> Optional[float]:
     """
     Computes empirical percentile rank (0 to 100) of target_value within the historical series.
+    Returns None if target_value is None or series has no valid observations.
     """
-    if series.empty:
-        return 50.0
-    return round(float((series < target_value).mean() * 100.0), 1)
+    if target_value is None:
+        return None
+    valid_series = series.dropna()
+    if valid_series.empty:
+        return None
+    return round(float((valid_series < target_value).mean() * 100.0), 1)

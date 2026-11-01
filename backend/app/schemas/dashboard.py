@@ -5,12 +5,13 @@ from .common import LocationReference, SourceMetadata, RiskIndicator
 class QuickMetricCard(BaseModel):
     title: str
     location: str
-    value: float
+    value: Optional[float] = None
     units: str
-    delta_percentage: float
-    is_positive_delta: bool
+    delta_percentage: Optional[float] = None
+    is_positive_delta: Optional[bool] = None
     hazard_type: str
     context_note: str
+    is_data_available: bool = True
 
 class AlertNotice(BaseModel):
     id: str
@@ -26,7 +27,9 @@ class DashboardOverviewResponse(BaseModel):
     title: str = "JalRakshak Environmental Intelligence"
     timestamp: str
     data_freshness_status: str
-    is_demo_data: bool = True
+    data_mode: str = "CACHED_VERIFIED"
+    is_demo_data: bool = False
+    is_data_available: bool = True
     disclaimer: str
     pilot_locations: List[LocationReference]
     metric_cards: List[QuickMetricCard]
