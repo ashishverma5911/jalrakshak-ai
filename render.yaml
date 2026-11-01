@@ -18,9 +18,8 @@ services:
         value: 10000
       - key: DEMO_MODE
         value: "true"
-      # Replace with your actual deployed frontend URL once assigned by Render
       - key: CORS_ORIGINS
-        value: "https://YOUR_FRONTEND_URL_HERE.onrender.com,http://localhost:5173"
+        value: "https://jalrakshak-frontend-ymzk.onrender.com,http://localhost:5173"
       # Optional Gemma 4 AI Studio Key for neural explanation layer
       - key: GEMINI_API_KEY
         sync: false
@@ -34,9 +33,8 @@ services:
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     envVars:
-      # Replace with your actual deployed backend URL once assigned by Render
       - key: VITE_API_BASE_URL
-        value: https://YOUR_BACKEND_URL_HERE.onrender.com/api/v1
+        value: https://jalrakshak-api-fv5z.onrender.com/api/v1
     routes:
       - type: rewrite
         source: /*
