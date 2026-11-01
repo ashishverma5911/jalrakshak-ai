@@ -42,3 +42,11 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Scientific Ingestion: Local Upload Artifacts, Quarantine, & Ephemeral Spool
+backend/data/uploads/*
+!backend/data/uploads/.gitkeep
+spool/
+*.tmp
+*.crdownload
+upload_registry.json

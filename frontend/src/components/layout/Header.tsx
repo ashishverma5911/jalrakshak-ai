@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { useApp, PILOT_LOCATIONS, DataFreshnessMode } from '../../context/AppContext';
 import { PilotLocationId } from '../../types';
+import { RegionSelector } from '../common/RegionSelector';
+import { DataProvenanceBadge } from '../common/DataProvenanceBadge';
 
 export const Header: React.FC = () => {
   const {
@@ -23,6 +25,7 @@ export const Header: React.FC = () => {
     selectedLocation,
     setSelectedLocation,
     themeMode,
+    dataMode,
     dataFreshnessMode,
     setDataFreshnessMode,
   } = useApp();
@@ -56,10 +59,18 @@ export const Header: React.FC = () => {
         </button>
       </div>
 
-      {/* Right Section: Pilot Selector, Demo Data Pill, Live Timestamp, Notifications, Profile */}
+      {/* Right Section: Multi-Region Selector, Pilot Switcher, Integrity Pill, Profile */}
       <div className="flex items-center space-x-2.5">
+        {/* Dynamic Multi-Region District Selector */}
+        <RegionSelector />
+
+        {/* Global Data Mode & Provenance Badge */}
+        <div className="hidden md:inline-flex">
+          <DataProvenanceBadge mode={dataMode} compact />
+        </div>
+
         {/* Pilot Location Switcher Pill */}
-        <div className="hidden md:flex items-center p-1 rounded-xl bg-navy-900/90 border border-navy-700/80 shadow-inner">
+        <div className="hidden lg:flex items-center p-1 rounded-xl bg-navy-900/90 border border-navy-700/80 shadow-inner">
           {(['gorakhpur', 'mahoba', 'all'] as PilotLocationId[]).map((locId) => {
             const loc = PILOT_LOCATIONS[locId];
             const isSelected = selectedLocation === locId;

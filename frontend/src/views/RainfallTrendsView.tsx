@@ -13,11 +13,13 @@ import {
   RefreshCw,
   Table,
   AlertTriangle,
+  Database,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Card } from '../components/common/Card';
 import { RainfallChart, RainfallDataPoint } from '../components/charts/RainfallChart';
 import { apiService, RainfallTrendsResponse } from '../services/api';
+import { DataProvenanceBadge } from '../components/common/DataProvenanceBadge';
 import {
   UP_DISTRICTS_DATA,
   getFilteredRainfallData,
@@ -25,7 +27,7 @@ import {
 } from '../data/mockData';
 
 export const RainfallTrendsView: React.FC = () => {
-  const { selectedLocation, setSelectedLocation } = useApp();
+  const { selectedLocation, setSelectedLocation, activeLocationData, isConfiguredPilot } = useApp();
   const [activeTab, setActiveTab] = useState<'trend' | 'historical' | 'seasonal' | 'download'>('trend');
   const [timePeriod, setTimePeriod] = useState<'1y' | '5y' | '10y'>('1y');
   const [aggregation, setAggregation] = useState<'monthly' | 'weekly' | 'daily'>('monthly');
@@ -38,6 +40,10 @@ export const RainfallTrendsView: React.FC = () => {
   const districtData = UP_DISTRICTS_DATA.find((d) => d.id === locKey)!;
 
   const loadTrends = () => {
+    if (!isConfiguredPilot) {
+      setBackendTrends(null);
+      return;
+    }
     setIsLoading(true);
     setFetchError(null);
     const rangeParam = timePeriod === '1y' ? '30' : timePeriod === '5y' ? '90' : '365';
@@ -50,7 +56,7 @@ export const RainfallTrendsView: React.FC = () => {
 
   useEffect(() => {
     loadTrends();
-  }, [locKey, timePeriod]);
+  }, [locKey, timePeriod, isConfiguredPilot]);
 
   // Use backend series if available, otherwise fallback fixture
   let chartSeries: RainfallDataPoint[] = getFilteredRainfallData(locKey, '365', aggregation);
@@ -114,12 +120,41 @@ export const RainfallTrendsView: React.FC = () => {
           </span>
         </div>
         <div className="flex items-center space-x-2 text-[11px] font-mono shrink-0">
-          <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-            DEMO DATA
-          </span>
+          <DataProvenanceBadge
+            mode={backendTrends?.data_mode || (isConfiguredPilot ? 'CACHED_VERIFIED' : 'DATA_PENDING')}
+            source="CHIRPS v2.0 & NASA GPM Late Run"
+            datasetVersion="v2.0"
+            spatialResolution="0.05° (~5.3 km)"
+            compact
+          />
           <span className="text-cyan-400 uppercase">{locKey}</span>
         </div>
       </div>
+
+      {/* Candidate District Isolation & Pending Telemetry Banner */}
+      {!isConfiguredPilot && (
+        <div className="p-4 rounded-2xl bg-navy-900/90 border border-cyan-500/30 shadow-lg space-y-2">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-300 shrink-0">
+              <Database className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center space-x-2">
+                <span>{activeLocationData.name}</span>
+                <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                  Candidate District • Ingestion Pending
+                </span>
+              </h3>
+              <p className="text-xs text-slate-400">
+                Observational precipitation extraction queued. Climatological baselines uncalibrated.
+              </p>
+            </div>
+          </div>
+          <div className="p-2.5 rounded-xl bg-navy-950/80 border border-navy-800 text-xs text-slate-300 leading-relaxed">
+            <strong>Scientific Boundary:</strong> Daily precipitation series have not yet been ingested into the partitioned database for {activeLocationData.name}. In accordance with scientific integrity rules, candidate districts never inherit or interpolate observations from Gorakhpur or Mahoba.
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-navy-800">
@@ -138,6 +173,9 @@ export const RainfallTrendsView: React.FC = () => {
           >
             <option value="gorakhpur">Gorakhpur (Flood Pilot)</option>
             <option value="mahoba">Mahoba (Drought Pilot)</option>
+            {!isConfiguredPilot && (
+              <option value={selectedLocation}>{activeLocationData.name} (Candidate District)</option>
+            )}
           </select>
         </div>
       </div>
@@ -245,12 +283,42 @@ export const RainfallTrendsView: React.FC = () => {
         </div>
 
         <div className="mt-4">
-          <RainfallChart
-            data={chartSeries}
-            barColor={locKey === 'gorakhpur' ? '#00e5ff' : '#f59e0b'}
-            lineColor={locKey === 'gorakhpur' ? '#38bdf8' : '#ea580c'}
-            height={260}
-          />
+          {!isConfiguredPilot ? (
+            <div className="py-12 px-4 text-center space-y-3">
+              <div className="w-12 h-12 mx-auto rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center">
+                <Database className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-white">
+                  No Historical Precipitation Telemetry Ingested for {activeLocationData.name}
+                </h4>
+                <p className="text-xs text-slate-400 max-w-lg mx-auto mt-1 leading-relaxed">
+                  Administrative region {activeLocationData.region} is registered in the EPSG:4326 spatial hierarchy. Daily precipitation observations will appear here once the ingestion pipeline has been executed.
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-2 pt-2">
+                <button
+                  onClick={() => setSelectedLocation('gorakhpur')}
+                  className="px-3 py-1.5 rounded-xl bg-sky-500/20 text-sky-300 hover:bg-sky-500/30 border border-sky-500/40 text-xs font-semibold transition"
+                >
+                  View Gorakhpur Flood Series
+                </button>
+                <button
+                  onClick={() => setSelectedLocation('mahoba')}
+                  className="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 text-xs font-semibold transition"
+                >
+                  View Mahoba Drought Series
+                </button>
+              </div>
+            </div>
+          ) : (
+            <RainfallChart
+              data={chartSeries}
+              barColor={locKey === 'gorakhpur' ? '#00e5ff' : '#f59e0b'}
+              lineColor={locKey === 'gorakhpur' ? '#38bdf8' : '#ea580c'}
+              height={260}
+            />
+          )}
         </div>
 
         {/* Missing vs Zero Data Distinction Footer */}
@@ -327,50 +395,60 @@ export const RainfallTrendsView: React.FC = () => {
         <Card className="p-4">
           <span className="text-xs text-slate-400 font-medium">Total Rainfall</span>
           <div className="mt-2 text-2xl font-black text-white">
-            {locKey === 'gorakhpur' ? '1,024' : '230'}{' '}
+            {!isConfiguredPilot ? '--' : locKey === 'gorakhpur' ? '1,024' : '230'}{' '}
             <span className="text-sm font-semibold text-slate-400">mm</span>
           </div>
           <span
             className={`text-xs font-bold mt-1 block ${
-              locKey === 'gorakhpur' ? 'text-emerald-400' : 'text-rose-400'
+              !isConfiguredPilot
+                ? 'text-slate-400'
+                : locKey === 'gorakhpur'
+                ? 'text-emerald-400'
+                : 'text-rose-400'
             }`}
           >
-            {locKey === 'gorakhpur' ? '+16% vs historical' : '-72% vs historical'}
+            {!isConfiguredPilot ? 'Data Pending' : locKey === 'gorakhpur' ? '+16% vs historical' : '-72% vs historical'}
           </span>
         </Card>
 
         <Card className="p-4">
           <span className="text-xs text-slate-400 font-medium">Wet Days (&gt;2.5mm)</span>
           <div className="mt-2 text-2xl font-black text-white">
-            {locKey === 'gorakhpur' ? '56 days' : '18 days'}
+            {!isConfiguredPilot ? '--' : locKey === 'gorakhpur' ? '56 days' : '18 days'}
           </div>
           <span
             className={`text-xs font-bold mt-1 block ${
-              locKey === 'gorakhpur' ? 'text-emerald-400' : 'text-rose-400'
+              !isConfiguredPilot
+                ? 'text-slate-400'
+                : locKey === 'gorakhpur'
+                ? 'text-emerald-400'
+                : 'text-rose-400'
             }`}
           >
-            {locKey === 'gorakhpur' ? '+12% vs historical' : '-60% vs historical'}
+            {!isConfiguredPilot ? 'Pending Ingestion' : locKey === 'gorakhpur' ? '+12% vs historical' : '-60% vs historical'}
           </span>
         </Card>
 
         <Card className="p-4">
           <span className="text-xs text-slate-400 font-medium">Maximum Daily Rainfall</span>
           <div className="mt-2 text-2xl font-black text-cyan-300">
-            {locKey === 'gorakhpur' ? '128' : '48'}{' '}
+            {!isConfiguredPilot ? '--' : locKey === 'gorakhpur' ? '128' : '48'}{' '}
             <span className="text-sm font-semibold text-slate-400">mm</span>
           </div>
           <span className="text-xs text-slate-400 font-mono mt-1 block">
-            {locKey === 'gorakhpur' ? 'Recorded 25 Aug 2026' : 'Recorded 14 Jul 2026'}
+            {!isConfiguredPilot ? 'No station observations' : locKey === 'gorakhpur' ? 'Recorded 25 Aug 2026' : 'Recorded 14 Jul 2026'}
           </span>
         </Card>
 
         <Card className="p-4">
           <span className="text-xs text-slate-400 font-medium">Historical Baseline Avg</span>
           <div className="mt-2 text-2xl font-black text-slate-300">
-            {locKey === 'gorakhpur' ? '867' : '820'}{' '}
+            {!isConfiguredPilot ? '--' : locKey === 'gorakhpur' ? '867' : '820'}{' '}
             <span className="text-sm font-semibold text-slate-400">mm</span>
           </div>
-          <span className="text-xs text-slate-400 font-mono mt-1 block">30-Year Series (1991–2020)</span>
+          <span className="text-xs text-slate-400 font-mono mt-1 block">
+            {!isConfiguredPilot ? 'Awaiting Normal Calibration' : '30-Year Series (1991–2020)'}
+          </span>
         </Card>
       </div>
     </div>

@@ -20,6 +20,7 @@ import { Card } from '../components/common/Card';
 import { Badge } from '../components/common/Badge';
 import { RainfallChart } from '../components/charts/RainfallChart';
 import { apiService, HazardAssessmentResponse } from '../services/api';
+import { DataProvenanceBadge } from '../components/common/DataProvenanceBadge';
 import {
   UP_DISTRICTS_DATA,
   getFilteredRainfallData,
@@ -27,7 +28,14 @@ import {
 } from '../data/mockData';
 
 export const DroughtAssessmentView: React.FC = () => {
-  const { selectedLocation, setSelectedLocation, dataFreshnessMode } = useApp();
+  const {
+    selectedLocation,
+    setSelectedLocation,
+    setCurrentRoute,
+    dataFreshnessMode,
+    activeLocationData,
+    isConfiguredPilot,
+  } = useApp();
   const [activeTab, setActiveTab] = useState<'rainfall' | 'comparison' | 'indicators' | 'sources'>('rainfall');
   const [viewMode, setViewMode] = useState<'monthly' | 'weekly'>('monthly');
   const [backendData, setBackendData] = useState<HazardAssessmentResponse | null>(null);
@@ -74,6 +82,24 @@ export const DroughtAssessmentView: React.FC = () => {
         <span className="font-mono text-amber-400">PILOT: MAHOBA</span>
       </div>
 
+      {/* Scope Alert when a candidate district or non-drought district is active */}
+      {selectedLocation !== 'mahoba' && (
+        <div className="p-3.5 rounded-2xl bg-amber-950/60 border border-amber-500/40 text-xs text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+          <div className="flex items-center space-x-2.5">
+            <Info className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>
+              <strong>Hazard Pilot Scope:</strong> Mahoba is currently the active drought pilot. {activeLocationData.name} ({activeLocationData.region}) is not configured for meteorological drought indicators. Displaying Mahoba pilot benchmark data below.
+            </span>
+          </div>
+          <button
+            onClick={() => setSelectedLocation('mahoba')}
+            className="px-3 py-1 rounded-xl bg-amber-500 text-navy-950 font-semibold hover:bg-amber-400 transition shrink-0"
+          >
+            Focus Mahoba
+          </button>
+        </div>
+      )}
+
       {/* Header Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-navy-800">
         <div>
@@ -86,19 +112,38 @@ export const DroughtAssessmentView: React.FC = () => {
           <h1 className="text-2xl lg:text-3xl font-extrabold text-white mt-1">
             Mahoba — Drought Assessment
           </h1>
-          <p className="text-xs lg:text-sm text-slate-300">
-            Analyse seasonal rainfall deficits, SPI indicators and agricultural drought stress signals.
-          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <DataProvenanceBadge
+              mode={backendData?.data_mode || 'CACHED_VERIFIED'}
+              source="CHIRPS v2.0 / 30-Year Climatology (1991–2020)"
+              datasetVersion="v2.0"
+              spatialResolution="0.05° (~5.3 km)"
+              limitations="Spatial area-weighted aggregation over Mahoba boundary polygon. SPI-3 calculated via WMO 2-parameter Gamma MLE."
+            />
+            <p className="text-xs text-slate-300">
+              Analyse seasonal rainfall deficits, SPI indicators and agricultural drought stress signals.
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center space-x-3">
           <select
             value={selectedLocation}
-            onChange={(e) => setSelectedLocation(e.target.value as any)}
+            onChange={(e) => {
+              if (e.target.value === 'gorakhpur') {
+                setSelectedLocation('gorakhpur');
+                setCurrentRoute('flood');
+              } else {
+                setSelectedLocation(e.target.value as any);
+              }
+            }}
             className="bg-navy-850 border border-amber-500/40 text-xs font-semibold text-amber-200 rounded-xl px-3 py-2 focus:outline-none focus:border-amber-400"
           >
             <option value="mahoba">Mahoba (Drought Pilot)</option>
             <option value="gorakhpur">Switch to Gorakhpur (Flood)</option>
+            {selectedLocation !== 'mahoba' && selectedLocation !== 'gorakhpur' && (
+              <option value={selectedLocation}>{activeLocationData.name} (Candidate District)</option>
+            )}
           </select>
         </div>
       </div>

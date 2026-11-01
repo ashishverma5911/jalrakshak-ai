@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { NavigationRoute, PilotLocationId, PilotLocation } from '../types';
+import { NavigationRoute, PilotLocationId, PilotLocation, RegionSummary, DataMode } from '../types';
+import { apiService } from '../services/api';
 
-export const PILOT_LOCATIONS: Record<PilotLocationId, PilotLocation> = {
+export const PILOT_LOCATIONS: Record<string, PilotLocation> = {
   gorakhpur: {
     id: 'gorakhpur',
     name: 'Gorakhpur',
@@ -11,6 +12,7 @@ export const PILOT_LOCATIONS: Record<PilotLocationId, PilotLocation> = {
     region: 'Eastern Terai Plain',
     riverBasin: 'Rapti & Rohini Basin',
     description: 'UPSDMA hyper-sensitive flood district prone to rapid riverine swelling and terrain inundation.',
+    isConfiguredPilot: true,
   },
   mahoba: {
     id: 'mahoba',
@@ -21,6 +23,7 @@ export const PILOT_LOCATIONS: Record<PilotLocationId, PilotLocation> = {
     region: 'Bundelkhand Plateau',
     riverBasin: 'Ken & Betwa Interfluve',
     description: 'Drought-vulnerable agro-climatic zone characterized by acute seasonal deficits and rocky aquifers.',
+    isConfiguredPilot: true,
   },
   all: {
     id: 'all',
@@ -30,6 +33,7 @@ export const PILOT_LOCATIONS: Record<PilotLocationId, PilotLocation> = {
     coordinates: { lat: 26.8467, lng: 80.9462 },
     region: 'Northern India',
     description: 'Statewide environmental intelligence overview across 75 districts.',
+    isConfiguredPilot: true,
   },
 };
 
@@ -41,6 +45,12 @@ interface AppContextType {
   selectedLocation: PilotLocationId;
   setSelectedLocation: (id: PilotLocationId) => void;
   activeLocationData: PilotLocation;
+  isConfiguredPilot: boolean;
+  selectedState: 'state-uttar-pradesh' | 'state-bihar';
+  setSelectedState: (state: 'state-uttar-pradesh' | 'state-bihar') => void;
+  availableDistricts: RegionSummary[];
+  isLoadingDistricts: boolean;
+  districtsError: string | null;
   isSearchOpen: boolean;
   setIsSearchOpen: (open: boolean) => void;
   isNotificationsOpen: boolean;
@@ -48,6 +58,7 @@ interface AppContextType {
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
   themeMode: 'overview' | 'flood' | 'drought';
+  dataMode: DataMode;
   dataFreshnessMode: DataFreshnessMode;
   setDataFreshnessMode: (mode: DataFreshnessMode) => void;
   activeMapLayer: 'flood' | 'drought' | 'rainfall' | 'elevation';
@@ -61,11 +72,35 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentRoute, setCurrentRoute] = useState<NavigationRoute>('dashboard');
   const [selectedLocation, setSelectedLocation] = useState<PilotLocationId>('gorakhpur');
+  const [selectedState, setSelectedState] = useState<'state-uttar-pradesh' | 'state-bihar'>('state-uttar-pradesh');
+  const [availableDistricts, setAvailableDistricts] = useState<RegionSummary[]>([]);
+  const [isLoadingDistricts, setIsLoadingDistricts] = useState<boolean>(false);
+  const [districtsError, setDistrictsError] = useState<string | null>(null);
+
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [dataFreshnessMode, setDataFreshnessMode] = useState<DataFreshnessMode>('fresh');
   const [activeMapLayer, setActiveMapLayer] = useState<'flood' | 'drought' | 'rainfall' | 'elevation'>('flood');
+
+  // Fetch districts for selected state dynamically
+  useEffect(() => {
+    setIsLoadingDistricts(true);
+    setDistrictsError(null);
+    const stateCode = selectedState === 'state-uttar-pradesh' ? 'UP' : 'BR';
+    apiService
+      .fetchRegions({ region_type: 'district', state: stateCode })
+      .then((data) => {
+        const list = Array.isArray(data) ? data : (data as any).regions || [];
+        setAvailableDistricts(list);
+      })
+      .catch((err) => {
+        setDistrictsError(err?.message || 'Regional hierarchy feed offline');
+      })
+      .finally(() => {
+        setIsLoadingDistricts(false);
+      });
+  }, [selectedState]);
 
   // Persistent checklist state
   const [checklistState, setChecklistState] = useState<Record<string, boolean>>(() => {
@@ -85,6 +120,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } catch {}
       return updated;
     });
+  };
+
+  // Determine active pilot status
+  const isConfiguredPilot = selectedLocation === 'gorakhpur' || selectedLocation === 'mahoba' || selectedLocation === 'all';
+  const dataMode: DataMode = isConfiguredPilot ? 'CACHED_VERIFIED' : 'DATA_PENDING';
+
+  // Resolve active location data dynamically
+  const matchingDistrict = availableDistricts.find(
+    (d) =>
+      d.id === selectedLocation ||
+      d.code.toLowerCase() === selectedLocation.toLowerCase() ||
+      d.id === `district-${selectedLocation.toLowerCase()}`
+  );
+
+  const activeLocationData: PilotLocation = PILOT_LOCATIONS[selectedLocation] || {
+    id: selectedLocation,
+    name: matchingDistrict?.name || (selectedLocation.charAt(0).toUpperCase() + selectedLocation.slice(1)),
+    hindiName: (matchingDistrict?.metadata as any)?.hindi_name || '',
+    focusType: 'overview',
+    coordinates: {
+      lat: (matchingDistrict?.metadata as any)?.lat || (selectedState === 'state-bihar' ? 25.5941 : 26.8467),
+      lng: (matchingDistrict?.metadata as any)?.lng || (selectedState === 'state-bihar' ? 85.1376 : 80.9462),
+    },
+    region: (matchingDistrict?.metadata as any)?.region || (selectedState === 'state-bihar' ? 'Bihar Plain' : 'Uttar Pradesh'),
+    riverBasin: (matchingDistrict?.metadata as any)?.river_basin,
+    description: 'Candidate administrative district. Observational precipitation ingestion and scientific hazard modeling are currently pending onboarding.',
+    isConfiguredPilot: false,
   };
 
   // Compute theme mode based on active route or current focus
@@ -118,7 +180,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setCurrentRoute,
         selectedLocation,
         setSelectedLocation,
-        activeLocationData: PILOT_LOCATIONS[selectedLocation],
+        activeLocationData,
+        isConfiguredPilot,
+        selectedState,
+        setSelectedState,
+        availableDistricts,
+        isLoadingDistricts,
+        districtsError,
         isSearchOpen,
         setIsSearchOpen,
         isNotificationsOpen,
@@ -126,6 +194,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isSidebarOpen,
         setIsSidebarOpen,
         themeMode,
+        dataMode,
         dataFreshnessMode,
         setDataFreshnessMode,
         activeMapLayer,

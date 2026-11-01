@@ -19,6 +19,7 @@ import { Card } from '../components/common/Card';
 import { Badge } from '../components/common/Badge';
 import { RainfallChart } from '../components/charts/RainfallChart';
 import { apiService, HazardAssessmentResponse } from '../services/api';
+import { DataProvenanceBadge } from '../components/common/DataProvenanceBadge';
 import {
   UP_DISTRICTS_DATA,
   getFilteredRainfallData,
@@ -26,7 +27,14 @@ import {
 } from '../data/mockData';
 
 export const FloodAssessmentView: React.FC = () => {
-  const { selectedLocation, setSelectedLocation, setCurrentRoute, dataFreshnessMode } = useApp();
+  const {
+    selectedLocation,
+    setSelectedLocation,
+    setCurrentRoute,
+    dataFreshnessMode,
+    activeLocationData,
+    isConfiguredPilot,
+  } = useApp();
   const [activeTab, setActiveTab] = useState<'trend' | 'geo' | 'risk' | 'sources'>('trend');
   const [selectedLayer, setSelectedLayer] = useState<'rainfall' | 'river' | 'elevation' | 'boundary'>('rainfall');
   const [timeRange, setTimeRange] = useState<'7' | '30' | '90' | '365'>('30');
@@ -84,6 +92,24 @@ export const FloodAssessmentView: React.FC = () => {
         <span className="font-mono text-cyan-400">PILOT: GORAKHPUR</span>
       </div>
 
+      {/* Scope Alert when a candidate district or non-flood district is active */}
+      {selectedLocation !== 'gorakhpur' && (
+        <div className="p-3.5 rounded-2xl bg-sky-950/60 border border-sky-500/40 text-xs text-sky-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+          <div className="flex items-center space-x-2.5">
+            <Info className="w-4 h-4 text-sky-400 shrink-0" />
+            <span>
+              <strong>Hazard Pilot Scope:</strong> Gorakhpur is currently the active flood pilot. {activeLocationData.name} ({activeLocationData.region}) is not configured for hydrodynamic flood models. Displaying Gorakhpur pilot benchmark data below.
+            </span>
+          </div>
+          <button
+            onClick={() => setSelectedLocation('gorakhpur')}
+            className="px-3 py-1 rounded-xl bg-sky-500 text-white font-semibold hover:bg-sky-400 transition shrink-0"
+          >
+            Focus Gorakhpur
+          </button>
+        </div>
+      )}
+
       {/* Header Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-navy-800">
         <div>
@@ -96,9 +122,18 @@ export const FloodAssessmentView: React.FC = () => {
           <h1 className="text-2xl lg:text-3xl font-extrabold text-white mt-1">
             Gorakhpur — Flood Assessment
           </h1>
-          <p className="text-xs lg:text-sm text-slate-300">
-            Analyse rainfall, geographical terrain factors and heavy precipitation risk indicators.
-          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <DataProvenanceBadge
+              mode={backendData?.data_mode || 'CACHED_VERIFIED'}
+              source="NASA GPM Late Run / CHIRPS v2.0"
+              datasetVersion="v07B / v2.0"
+              spatialResolution="0.05° (~5.3 km)"
+              limitations="Area-weighted spatial aggregation over validated Gorakhpur boundary polygon. Does not calculate Rapti river stage gauge depth."
+            />
+            <p className="text-xs text-slate-300">
+              Analyse rainfall, geographical terrain factors and heavy precipitation risk indicators.
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center space-x-3">
@@ -109,6 +144,9 @@ export const FloodAssessmentView: React.FC = () => {
           >
             <option value="gorakhpur">Gorakhpur (Flood Pilot)</option>
             <option value="mahoba">Switch to Mahoba (Drought)</option>
+            {selectedLocation !== 'gorakhpur' && selectedLocation !== 'mahoba' && (
+              <option value={selectedLocation}>{activeLocationData.name} (Candidate District)</option>
+            )}
           </select>
         </div>
       </div>

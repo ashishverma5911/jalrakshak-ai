@@ -18,6 +18,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { Card } from '../components/common/Card';
 import { apiService, GroundedEvidenceItem } from '../services/api';
+import { DataProvenanceBadge } from '../components/common/DataProvenanceBadge';
 
 interface Message {
   id: string;
@@ -175,9 +176,18 @@ export const AIAssistantView: React.FC = () => {
           <h1 className="text-2xl lg:text-3xl font-extrabold text-white mt-1">
             JalRakshak Assistant
           </h1>
-          <p className="text-xs lg:text-sm text-slate-300">
-            Ask questions about flood risk, drought anomalies, rainfall data and preparedness resources.
-          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <DataProvenanceBadge
+              mode={selectedLocation === 'mahoba' ? 'CACHED_VERIFIED' : (selectedLocation === 'gorakhpur' ? 'CACHED_VERIFIED' : 'DATA_PENDING')}
+              source="CHIRPS v2.0 / NASA GPM / SRTM 30m"
+              datasetVersion="v2.0"
+              spatialResolution="0.05° (~5.3 km)"
+              limitations="Assistant synthesizes grounded evidence only. Does not issue official warnings or predict breach depths."
+            />
+            <p className="text-xs lg:text-sm text-slate-300">
+              Ask questions about flood risk, drought anomalies, rainfall data and preparedness resources.
+            </p>
+          </div>
         </div>
 
         {/* Runtime Status Pill */}

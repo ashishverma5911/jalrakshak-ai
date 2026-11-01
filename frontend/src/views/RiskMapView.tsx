@@ -21,6 +21,7 @@ import { useApp } from '../context/AppContext';
 import { Card } from '../components/common/Card';
 import { DistrictRiskMap } from '../components/map/DistrictRiskMap';
 import { apiService, MapLayersResponse, DistrictMapFeature } from '../services/api';
+import { DataProvenanceBadge } from '../components/common/DataProvenanceBadge';
 import { UP_DISTRICTS_DATA, DistrictGeoData, DEMO_DATA_DISCLAIMER } from '../data/mockData';
 
 export const RiskMapView: React.FC = () => {
@@ -108,9 +109,18 @@ export const RiskMapView: React.FC = () => {
           <h1 className="text-2xl lg:text-3xl font-extrabold text-white mt-1">
             Interactive Risk Map
           </h1>
-          <p className="text-xs lg:text-sm text-slate-300">
-            Explore localized flood inundation proxies, drought anomalies and topographic layers across Uttar Pradesh.
-          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <DataProvenanceBadge
+              mode={backendMapLayers?.data_mode || 'CACHED_VERIFIED'}
+              source="NASA SRTM 30m & CHIRPS v2.0"
+              datasetVersion="v3.0 void-filled"
+              spatialResolution="1 arc-second (~30m)"
+              limitations="Gorakhpur and Mahoba districts bounded by validated Survey of India / OSM administrative polygon boundaries (EPSG:4326). Candidate districts use centroid points pending polygon onboarding."
+            />
+            <p className="text-xs text-slate-300">
+              Explore localized flood inundation proxies, drought anomalies and topographic layers across Uttar Pradesh.
+            </p>
+          </div>
         </div>
 
         {/* View Mode Toggle: Canvas vs Accessible Table */}

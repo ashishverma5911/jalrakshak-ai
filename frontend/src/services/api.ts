@@ -3,22 +3,41 @@
  * Strongly typed interface matching FastAPI Pydantic v2 schemas.
  */
 
+import type {
+  RegionSummary,
+  RegionDetail,
+  RegionHazardsResponse,
+  RegionListResponse,
+} from '../types';
+
+export type {
+  RegionSummary,
+  RegionDetail,
+  RegionHazardsResponse,
+  RegionListResponse,
+};
+
 const API_BASE_URL = (((import.meta as any).env?.VITE_API_BASE_URL as string) || '/api/v1').replace(/\/+$/, '');
+
+export type DataMode = 'LIVE_VERIFIED' | 'CACHED_VERIFIED' | 'DEMONSTRATION' | 'DATA_PENDING' | 'DATA_STALE';
 
 export interface SourceMetadata {
   source_id: string;
   source_name: string;
   spatial_resolution: string;
   temporal_resolution: string;
+  dataset_version?: string;
   access_url?: string;
   units: string;
+  data_mode?: DataMode;
   retrieval_timestamp?: string;
+  license?: string;
 }
 
 export interface RiskIndicator {
   indicator_id: string;
   name: string;
-  value: number;
+  value: number | null;
   units: string;
   category: 'observed_measurement' | 'derived_indicator' | 'validated_model' | 'official_alert';
   calculation_window: string;
@@ -26,9 +45,13 @@ export interface RiskIndicator {
   observation_timestamp: string;
   retrieval_timestamp: string;
   quality_status: 'verified' | 'provisional' | 'stale' | 'missing' | 'simulated_demo';
+  data_mode?: DataMode;
+  dataset_version?: string;
+  spatial_resolution?: string;
   methodology_version: string;
   limitations: string;
   is_demo_data: boolean;
+  is_data_available?: boolean;
 }
 
 export interface LocationReference {
@@ -46,10 +69,12 @@ export interface LocationReference {
 export interface HazardAssessmentResponse {
   location: LocationReference;
   hazard: 'flood' | 'drought' | 'multi_hazard' | 'rainfall';
-  risk_level: 'high' | 'moderate' | 'low' | 'nodata';
+  risk_level: 'high' | 'moderate' | 'low' | 'nodata' | 'pending';
   assessment_period: string;
   generated_at: string;
+  data_mode?: DataMode;
   is_demo_data: boolean;
+  is_data_available?: boolean;
   disclaimer: string;
   indicators: RiskIndicator[];
   sources: SourceMetadata[];
@@ -59,12 +84,13 @@ export interface HazardAssessmentResponse {
 export interface QuickMetricCard {
   title: string;
   location: string;
-  value: number;
+  value: number | null;
   units: string;
-  delta_percentage: number;
-  is_positive_delta: boolean;
+  delta_percentage?: number | null;
+  is_positive_delta?: boolean | null;
   hazard_type: string;
   context_note: string;
+  is_data_available?: boolean;
 }
 
 export interface AlertNotice {
@@ -82,7 +108,9 @@ export interface DashboardOverviewResponse {
   title: string;
   timestamp: string;
   data_freshness_status: string;
+  data_mode?: DataMode;
   is_demo_data: boolean;
+  is_data_available?: boolean;
   disclaimer: string;
   pilot_locations: LocationReference[];
   metric_cards: QuickMetricCard[];
@@ -94,7 +122,7 @@ export interface RainfallSeriesPoint {
   date: string;
   observed_rainfall_mm: number | null;
   historical_avg_mm: number;
-  anomaly_percentage?: number;
+  anomaly_percentage?: number | null;
   is_zero_measured?: boolean;
   is_missing?: boolean;
   data_quality?: 'observed' | 'zero_precipitation' | 'missing';
@@ -105,13 +133,15 @@ export interface RainfallTrendsResponse {
   location_name: string;
   aggregation: string;
   time_period: string;
-  total_rainfall_mm: number;
-  historical_baseline_avg_mm: number;
-  wet_days_count: number;
-  max_daily_rainfall_mm: number;
+  total_rainfall_mm?: number | null;
+  historical_baseline_avg_mm?: number | null;
+  wet_days_count?: number | null;
+  max_daily_rainfall_mm?: number | null;
   max_daily_date?: string;
-  departure_percentage: number;
+  departure_percentage?: number | null;
   data_coverage_pct?: number;
+  is_data_available?: boolean;
+  data_mode?: DataMode;
   observation_window?: string;
   disclaimer?: string;
   is_demo_data: boolean;
@@ -130,8 +160,9 @@ export interface DistrictMapFeature {
   is_pilot: boolean;
   flood_risk: string;
   drought_risk: string;
-  rainfall_anomaly_pct: number;
-  spi3: number;
+  rainfall_anomaly_pct?: number | null;
+  spi3?: number | null;
+  is_data_available?: boolean;
   observation_window?: string;
   source_timestamp?: string;
   data_quality?: string;
@@ -144,6 +175,7 @@ export interface MapLayersResponse {
   layer_type: string;
   generated_at: string;
   is_demo_data: boolean;
+  data_mode?: DataMode;
   geometry_status?: string;
   geometry_available?: boolean;
   geometry_disclaimer?: string;
@@ -207,6 +239,64 @@ export interface AssistantChatResponse {
   is_demo_data: boolean;
   limitations: string[];
   disclaimer: string;
+}
+
+export interface ValidationReport {
+  is_valid: boolean;
+  file_type: string;
+  mime_detected: string;
+  file_size_bytes: number;
+  sha256_hash: string;
+  target_region_id?: string;
+  data_mode: string;
+  data_classification?: string;
+  processing_stage?: string;
+  scientific_decoding_status?: string;
+  spatial_validation_status?: string;
+  spatial_overlap_pct?: number;
+  spatial_crs?: string;
+  spatial_coverage_status?: string;
+  bounding_box?: { min_lng: number; min_lat: number; max_lng: number; max_lat: number };
+  raster_dimensions?: { width: number; height: number; bands: number };
+  temporal_semantics?: string;
+  uncompressed_bytes?: number;
+  compression_ratio?: number;
+  total_records: number;
+  valid_records: number;
+  missing_records: number;
+  extreme_records: number;
+  date_range?: { start: string; end: string };
+  mean_value?: number;
+  max_value?: number;
+  min_value?: number;
+  warnings: string[];
+  errors: string[];
+  metadata: Record<string, any>;
+}
+
+export interface DatasetUploadResponse {
+  upload_id: string;
+  filename: string;
+  status: 'VALIDATED' | 'REJECTED' | 'INGESTED' | 'UNSUPPORTED' | 'QUARANTINED';
+  processing_stage?: string;
+  data_classification?: string;
+  message: string;
+  validation_report: ValidationReport;
+  uploaded_at: string;
+}
+
+export interface UploadHistoryItem {
+  upload_id: string;
+  filename: string;
+  file_type: string;
+  target_region_id?: string;
+  records_count: number;
+  status: string;
+  processing_stage?: string;
+  data_classification?: string;
+  spatial_overlap_pct?: number;
+  file_size_bytes: number;
+  uploaded_at: string;
 }
 
 /**
@@ -288,5 +378,64 @@ export const apiService = {
       method: 'POST',
       body: JSON.stringify({ query, location }),
     });
+  },
+
+  fetchRegions: (params?: {
+    region_type?: string;
+    parent_id?: string;
+    state?: string;
+    hazard_type?: string;
+    is_active?: boolean;
+  }): Promise<RegionListResponse> => {
+    const query = new URLSearchParams();
+    if (params) {
+      if (params.region_type) query.set('region_type', params.region_type);
+      if (params.parent_id) query.set('parent_id', params.parent_id);
+      if (params.state) query.set('state', params.state);
+      if (params.hazard_type) query.set('hazard_type', params.hazard_type);
+      if (params.is_active !== undefined) query.set('is_active', String(params.is_active));
+    }
+    const qs = query.toString();
+    return apiFetch<RegionListResponse>(`/regions${qs ? `?${qs}` : ''}`);
+  },
+
+  fetchRegionById: (regionId: string): Promise<RegionDetail> => {
+    return apiFetch<RegionDetail>(`/regions/${encodeURIComponent(regionId)}`);
+  },
+
+  fetchRegionHazards: (regionId: string): Promise<RegionHazardsResponse> => {
+    return apiFetch<RegionHazardsResponse>(`/regions/${encodeURIComponent(regionId)}/hazards`);
+  },
+
+  fetchRegionChildren: (regionId: string): Promise<RegionListResponse> => {
+    return apiFetch<RegionListResponse>(`/regions/${encodeURIComponent(regionId)}/children`);
+  },
+
+  uploadScientificDataset: async (file: File, targetRegionId?: string): Promise<DatasetUploadResponse> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (targetRegionId) {
+      formData.append('target_region_id', targetRegionId);
+    }
+    const res = await fetch(`${API_BASE_URL}/uploads/scientific-dataset`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Dataset upload failed.');
+    }
+    return res.json();
+  },
+
+  fetchUploadHistory: (): Promise<UploadHistoryItem[]> => {
+    return apiFetch<UploadHistoryItem[]>('/uploads/history');
+  },
+
+  cleanupQuarantine: (maxAgeHours: number = 24.0): Promise<{ deleted_files_count: number; reclaimed_bytes: number; current_storage_bytes: number }> => {
+    return apiFetch<{ deleted_files_count: number; reclaimed_bytes: number; current_storage_bytes: number }>(
+      `/uploads/cleanup?max_age_hours=${maxAgeHours}`,
+      { method: 'POST' }
+    );
   },
 };

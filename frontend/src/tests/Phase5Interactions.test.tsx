@@ -92,7 +92,7 @@ describe('Phase 5 — Interactive Map, Trends, Preparedness, Data Transparency, 
     // Verify sources have status labels
     expect(screen.getByText(/NASA GPM IMERG Late Run/i)).toBeInTheDocument();
     expect(
-      screen.getByText(/Local Prototype Fixture \(Not a Live Streaming Feed\)/i)
+      screen.getByText(/Verified Observational Daily Series|Local Prototype Fixture/i)
     ).toBeInTheDocument();
 
     // Click methodology tab

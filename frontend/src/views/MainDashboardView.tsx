@@ -25,6 +25,7 @@ import { Card } from '../components/common/Card';
 import { DistrictRiskMap } from '../components/map/DistrictRiskMap';
 import { RainfallChart, RainfallDataPoint } from '../components/charts/RainfallChart';
 import { apiService, DashboardOverviewResponse, RainfallTrendsResponse } from '../services/api';
+import { DataProvenanceBadge } from '../components/common/DataProvenanceBadge';
 import {
   UP_DISTRICTS_DATA,
   getFilteredRainfallData,
@@ -39,6 +40,8 @@ export const MainDashboardView: React.FC = () => {
     selectedLocation,
     dataFreshnessMode,
     setDataFreshnessMode,
+    activeLocationData,
+    isConfiguredPilot,
   } = useApp();
 
   const [trendRange, setTrendRange] = useState<'7' | '30' | '90' | '365'>('30');
@@ -111,14 +114,60 @@ export const MainDashboardView: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div className="px-3.5 py-2 rounded-xl bg-navy-900/60 border border-navy-800 flex items-center justify-between text-[11px] text-slate-400">
+        <div className="px-3.5 py-2.5 rounded-xl bg-navy-900/60 border border-navy-800 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
           <div className="flex items-center space-x-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-            <span>
+            <DataProvenanceBadge
+              mode={backendDashboard?.data_mode || (isConfiguredPilot ? 'CACHED_VERIFIED' : 'DATA_PENDING')}
+              source="CHIRPS v2.0 & NASA GPM Late Run"
+              datasetVersion="v2.0"
+              spatialResolution="0.05° (~5.3 km)"
+            />
+            <span className="hidden sm:inline">
               <strong>Decision-Support Prototype:</strong> {DEMO_DATA_DISCLAIMER}
             </span>
           </div>
           <span className="font-mono text-cyan-400 hidden md:inline">Pilot: UP-2026</span>
+        </div>
+      )}
+
+      {/* 0.1 Candidate District Isolation & Pending Telemetry Banner */}
+      {!isConfiguredPilot && (
+        <div className="p-4 rounded-2xl bg-navy-900/90 border border-cyan-500/30 shadow-lg space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center space-x-3">
+              <div className="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-300 shrink-0">
+                <Database className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center space-x-2">
+                  <span>{activeLocationData.name} {activeLocationData.hindiName ? `(${activeLocationData.hindiName})` : ''}</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                    Candidate District • Ingestion Pending
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Administrative Region: {activeLocationData.region} • Basin: {activeLocationData.riverBasin || 'Regional Basin'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2 text-xs">
+              <button
+                onClick={() => setSelectedLocation('gorakhpur')}
+                className="px-2.5 py-1 rounded-lg bg-sky-500/20 text-sky-300 hover:bg-sky-500/30 border border-sky-500/40 transition font-medium text-[11px]"
+              >
+                Gorakhpur Flood Pilot
+              </button>
+              <button
+                onClick={() => setSelectedLocation('mahoba')}
+                className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 transition font-medium text-[11px]"
+              >
+                Mahoba Drought Pilot
+              </button>
+            </div>
+          </div>
+          <div className="p-3 rounded-xl bg-navy-950/80 border border-navy-800 text-xs text-slate-300 leading-relaxed">
+            <strong>Scientific Integrity & Data Isolation Notice:</strong> JalRakshak AI maintains strict isolation between administrative regions. Candidate districts are registered in the spatial hierarchy (EPSG:4326), but hazard indicators and calibrated return periods will only be activated following validated station-blended telemetry ingestion. <em>This district never inherits or interpolates risk scores from Gorakhpur or Mahoba.</em>
+          </div>
         </div>
       )}
 
@@ -188,154 +237,237 @@ export const MainDashboardView: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Top Metric Cards Row (4 cards matching the approved mockup) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Gorakhpur Current Rainfall */}
-        <Card
-          variant="flood"
-          hoverEffect
-          onClick={() => {
-            setSelectedLocation('gorakhpur');
-            setCurrentRoute('flood');
-          }}
-          className="relative overflow-hidden group"
-        >
-          <div className="flex items-start justify-between">
-            <div className="w-11 h-11 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 flex items-center justify-center shadow-inner">
-              <CloudRain className="w-6 h-6" />
-            </div>
-            <button
-              className="w-7 h-7 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center justify-center group-hover:bg-cyan-500 group-hover:text-white transition-all"
-              aria-label="View Gorakhpur Current Rainfall"
-            >
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-          <div className="mt-4">
-            <p className="text-xs text-slate-400 font-medium">Current Rainfall</p>
-            <p className="text-xs font-semibold text-cyan-300">Gorakhpur</p>
-            <div className="mt-1 flex items-baseline space-x-2">
-              <span className="text-3xl font-extrabold text-white tracking-tight">
-                {gorakhpurData.rainfall7dMm}
+      {/* 2. Top Metric Cards Row (4 cards matching the approved mockup or candidate pending states) */}
+      {!isConfiguredPilot ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card variant="default" className="relative overflow-hidden group">
+            <div className="flex items-start justify-between">
+              <div className="w-11 h-11 rounded-xl bg-slate-800 text-slate-400 flex items-center justify-center">
+                <CloudRain className="w-6 h-6" />
+              </div>
+              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+                Data Pending
               </span>
-              <span className="text-sm font-semibold text-slate-300">mm</span>
             </div>
-            <div className="mt-2 flex items-center text-xs font-bold text-emerald-400">
-              <TrendingUp className="w-3.5 h-3.5 mr-1" />
-              <span>+{gorakhpurData.anomalyPct}% vs normal</span>
+            <div className="mt-4">
+              <p className="text-xs text-slate-400 font-medium">Current Rainfall</p>
+              <p className="text-xs font-semibold text-slate-200">{activeLocationData.name}</p>
+              <div className="mt-1 flex items-baseline space-x-2">
+                <span className="text-3xl font-extrabold text-slate-400 tracking-tight">--</span>
+                <span className="text-sm font-semibold text-slate-500">mm</span>
+              </div>
+              <p className="mt-2 text-xs text-slate-400">Station telemetry stream unlinked</p>
             </div>
-          </div>
-        </Card>
+          </Card>
 
-        {/* Card 2: Gorakhpur 7-Day Rainfall */}
-        <Card
-          variant="flood"
-          hoverEffect
-          onClick={() => {
-            setSelectedLocation('gorakhpur');
-            setCurrentRoute('flood');
-          }}
-          className="relative overflow-hidden group"
-        >
-          <div className="flex items-start justify-between">
-            <div className="w-11 h-11 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-300 flex items-center justify-center shadow-inner">
-              <Waves className="w-6 h-6" />
-            </div>
-            <button
-              className="w-7 h-7 rounded-full bg-sky-500/20 text-sky-300 flex items-center justify-center group-hover:bg-sky-500 group-hover:text-white transition-all"
-              aria-label="View Gorakhpur 7-Day Rainfall"
-            >
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-          <div className="mt-4">
-            <p className="text-xs text-slate-400 font-medium">7-Day Rainfall</p>
-            <p className="text-xs font-semibold text-sky-300">Gorakhpur</p>
-            <div className="mt-1 flex items-baseline space-x-2">
-              <span className="text-3xl font-extrabold text-white tracking-tight">
-                {gorakhpurData.rainfall30dMm}
+          <Card variant="default" className="relative overflow-hidden group">
+            <div className="flex items-start justify-between">
+              <div className="w-11 h-11 rounded-xl bg-slate-800 text-slate-400 flex items-center justify-center">
+                <Waves className="w-6 h-6" />
+              </div>
+              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+                Data Pending
               </span>
-              <span className="text-sm font-semibold text-slate-300">mm</span>
             </div>
-            <div className="mt-2 flex items-center text-xs font-bold text-emerald-400">
-              <TrendingUp className="w-3.5 h-3.5 mr-1" />
-              <span>+48% vs normal</span>
+            <div className="mt-4">
+              <p className="text-xs text-slate-400 font-medium">7-Day Cumulative</p>
+              <p className="text-xs font-semibold text-slate-200">{activeLocationData.name}</p>
+              <div className="mt-1 flex items-baseline space-x-2">
+                <span className="text-3xl font-extrabold text-slate-400 tracking-tight">--</span>
+                <span className="text-sm font-semibold text-slate-500">mm</span>
+              </div>
+              <p className="mt-2 text-xs text-slate-400">Ingestion pipeline awaiting execution</p>
             </div>
-          </div>
-        </Card>
+          </Card>
 
-        {/* Card 3: Mahoba 90-Day Rainfall */}
-        <Card
-          variant="drought"
-          hoverEffect
-          onClick={() => {
-            setSelectedLocation('mahoba');
-            setCurrentRoute('drought');
-          }}
-          className="relative overflow-hidden group"
-        >
-          <div className="flex items-start justify-between">
-            <div className="w-11 h-11 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 flex items-center justify-center shadow-inner">
-              <Sun className="w-6 h-6" />
-            </div>
-            <button
-              className="w-7 h-7 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-all"
-              aria-label="View Mahoba 90-Day Rainfall"
-            >
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-          <div className="mt-4">
-            <p className="text-xs text-slate-400 font-medium">90-Day Rainfall</p>
-            <p className="text-xs font-semibold text-amber-300">Mahoba</p>
-            <div className="mt-1 flex items-baseline space-x-2">
-              <span className="text-3xl font-extrabold text-white tracking-tight">
-                {mahobaData.rainfall90dMm}
+          <Card variant="default" className="relative overflow-hidden group">
+            <div className="flex items-start justify-between">
+              <div className="w-11 h-11 rounded-xl bg-slate-800 text-slate-400 flex items-center justify-center">
+                <Sun className="w-6 h-6" />
+              </div>
+              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+                Pending Baseline
               </span>
-              <span className="text-sm font-semibold text-slate-300">mm</span>
             </div>
-            <div className="mt-2 flex items-center text-xs font-bold text-rose-400">
-              <TrendingDown className="w-3.5 h-3.5 mr-1" />
-              <span>{mahobaData.anomalyPct}% vs normal</span>
+            <div className="mt-4">
+              <p className="text-xs text-slate-400 font-medium">Seasonal Normal</p>
+              <p className="text-xs font-semibold text-slate-200">{activeLocationData.name}</p>
+              <div className="mt-1 flex items-baseline space-x-2">
+                <span className="text-3xl font-extrabold text-slate-400 tracking-tight">--</span>
+                <span className="text-sm font-semibold text-slate-500">mm</span>
+              </div>
+              <p className="mt-2 text-xs text-slate-400">30-year climatology uncalibrated</p>
             </div>
-          </div>
-        </Card>
+          </Card>
 
-        {/* Card 4: Mahoba Seasonal Deficit */}
-        <Card
-          variant="drought"
-          hoverEffect
-          onClick={() => {
-            setSelectedLocation('mahoba');
-            setCurrentRoute('drought');
-          }}
-          className="relative overflow-hidden group"
-        >
-          <div className="flex items-start justify-between">
-            <div className="w-11 h-11 rounded-xl bg-orange-500/15 border border-orange-500/30 text-orange-300 flex items-center justify-center shadow-inner">
-              <Sprout className="w-6 h-6" />
-            </div>
-            <button
-              className="w-7 h-7 rounded-full bg-orange-500/20 text-orange-300 flex items-center justify-center group-hover:bg-orange-500 group-hover:text-white transition-all"
-              aria-label="View Mahoba Seasonal Deficit"
-            >
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-          <div className="mt-4">
-            <p className="text-xs text-slate-400 font-medium">Seasonal Deficit</p>
-            <p className="text-xs font-semibold text-orange-300">Mahoba</p>
-            <div className="mt-1 flex items-baseline space-x-2">
-              <span className="text-3xl font-extrabold text-rose-400 tracking-tight">
-                {mahobaData.seasonalDeficitPct}%
+          <Card variant="default" className="relative overflow-hidden group">
+            <div className="flex items-start justify-between">
+              <div className="w-11 h-11 rounded-xl bg-slate-800 text-slate-400 flex items-center justify-center">
+                <Sprout className="w-6 h-6" />
+              </div>
+              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+                Model Offline
               </span>
             </div>
-            <div className="mt-2 flex items-center text-xs font-semibold text-amber-300">
-              <span>Severe Bundelkhand deficit</span>
+            <div className="mt-4">
+              <p className="text-xs text-slate-400 font-medium">Hazard Status</p>
+              <p className="text-xs font-semibold text-slate-200">{activeLocationData.name}</p>
+              <div className="mt-1 flex items-baseline space-x-2">
+                <span className="text-2xl font-extrabold text-slate-400 tracking-tight">Pending</span>
+              </div>
+              <p className="mt-2 text-xs text-slate-400">Zero data bleed from pilot models</p>
             </div>
-          </div>
-        </Card>
-      </div>
+          </Card>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Card 1: Gorakhpur Current Rainfall */}
+          <Card
+            variant="flood"
+            hoverEffect
+            onClick={() => {
+              setSelectedLocation('gorakhpur');
+              setCurrentRoute('flood');
+            }}
+            className="relative overflow-hidden group"
+          >
+            <div className="flex items-start justify-between">
+              <div className="w-11 h-11 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 flex items-center justify-center shadow-inner">
+                <CloudRain className="w-6 h-6" />
+              </div>
+              <button
+                className="w-7 h-7 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center justify-center group-hover:bg-cyan-500 group-hover:text-white transition-all"
+                aria-label="View Gorakhpur Current Rainfall"
+              >
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="mt-4">
+              <p className="text-xs text-slate-400 font-medium">Current Rainfall</p>
+              <p className="text-xs font-semibold text-cyan-300">Gorakhpur</p>
+              <div className="mt-1 flex items-baseline space-x-2">
+                <span className="text-3xl font-extrabold text-white tracking-tight">
+                  {gorakhpurData.rainfall7dMm}
+                </span>
+                <span className="text-sm font-semibold text-slate-300">mm</span>
+              </div>
+              <div className="mt-2 flex items-center text-xs font-bold text-emerald-400">
+                <TrendingUp className="w-3.5 h-3.5 mr-1" />
+                <span>+{gorakhpurData.anomalyPct}% vs normal</span>
+              </div>
+            </div>
+          </Card>
+
+          {/* Card 2: Gorakhpur 7-Day Rainfall */}
+          <Card
+            variant="flood"
+            hoverEffect
+            onClick={() => {
+              setSelectedLocation('gorakhpur');
+              setCurrentRoute('flood');
+            }}
+            className="relative overflow-hidden group"
+          >
+            <div className="flex items-start justify-between">
+              <div className="w-11 h-11 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-300 flex items-center justify-center shadow-inner">
+                <Waves className="w-6 h-6" />
+              </div>
+              <button
+                className="w-7 h-7 rounded-full bg-sky-500/20 text-sky-300 flex items-center justify-center group-hover:bg-sky-500 group-hover:text-white transition-all"
+                aria-label="View Gorakhpur 7-Day Rainfall"
+              >
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="mt-4">
+              <p className="text-xs text-slate-400 font-medium">7-Day Rainfall</p>
+              <p className="text-xs font-semibold text-sky-300">Gorakhpur</p>
+              <div className="mt-1 flex items-baseline space-x-2">
+                <span className="text-3xl font-extrabold text-white tracking-tight">
+                  {gorakhpurData.rainfall30dMm}
+                </span>
+                <span className="text-sm font-semibold text-slate-300">mm</span>
+              </div>
+              <div className="mt-2 flex items-center text-xs font-bold text-emerald-400">
+                <TrendingUp className="w-3.5 h-3.5 mr-1" />
+                <span>+48% vs normal</span>
+              </div>
+            </div>
+          </Card>
+
+          {/* Card 3: Mahoba 90-Day Rainfall */}
+          <Card
+            variant="drought"
+            hoverEffect
+            onClick={() => {
+              setSelectedLocation('mahoba');
+              setCurrentRoute('drought');
+            }}
+            className="relative overflow-hidden group"
+          >
+            <div className="flex items-start justify-between">
+              <div className="w-11 h-11 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 flex items-center justify-center shadow-inner">
+                <Sun className="w-6 h-6" />
+              </div>
+              <button
+                className="w-7 h-7 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-all"
+                aria-label="View Mahoba 90-Day Rainfall"
+              >
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="mt-4">
+              <p className="text-xs text-slate-400 font-medium">90-Day Rainfall</p>
+              <p className="text-xs font-semibold text-amber-300">Mahoba</p>
+              <div className="mt-1 flex items-baseline space-x-2">
+                <span className="text-3xl font-extrabold text-white tracking-tight">
+                  {mahobaData.rainfall90dMm}
+                </span>
+                <span className="text-sm font-semibold text-slate-300">mm</span>
+              </div>
+              <div className="mt-2 flex items-center text-xs font-bold text-rose-400">
+                <TrendingDown className="w-3.5 h-3.5 mr-1" />
+                <span>{mahobaData.anomalyPct}% vs normal</span>
+              </div>
+            </div>
+          </Card>
+
+          {/* Card 4: Mahoba Seasonal Deficit */}
+          <Card
+            variant="drought"
+            hoverEffect
+            onClick={() => {
+              setSelectedLocation('mahoba');
+              setCurrentRoute('drought');
+            }}
+            className="relative overflow-hidden group"
+          >
+            <div className="flex items-start justify-between">
+              <div className="w-11 h-11 rounded-xl bg-orange-500/15 border border-orange-500/30 text-orange-300 flex items-center justify-center shadow-inner">
+                <Sprout className="w-6 h-6" />
+              </div>
+              <button
+                className="w-7 h-7 rounded-full bg-orange-500/20 text-orange-300 flex items-center justify-center group-hover:bg-orange-500 group-hover:text-white transition-all"
+                aria-label="View Mahoba Seasonal Deficit"
+              >
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="mt-4">
+              <p className="text-xs text-slate-400 font-medium">Seasonal Deficit</p>
+              <p className="text-xs font-semibold text-orange-300">Mahoba</p>
+              <div className="mt-1 flex items-baseline space-x-2">
+                <span className="text-3xl font-extrabold text-rose-400 tracking-tight">
+                  {mahobaData.seasonalDeficitPct}%
+                </span>
+              </div>
+              <div className="mt-2 flex items-center text-xs font-semibold text-amber-300">
+                <span>Severe Bundelkhand deficit</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* 3. Main Operational Intelligence Grid (Map, Trends, Sidebar Columns) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -417,12 +549,48 @@ export const MainDashboardView: React.FC = () => {
 
               {/* Chart Component */}
               <div className="mt-4">
-                <RainfallChart
-                  data={chartData}
-                  barColor={trendDistrict === 'gorakhpur' ? '#00e5ff' : '#f59e0b'}
-                  lineColor="#38bdf8"
-                  height={190}
-                />
+                {!isConfiguredPilot ? (
+                  <div className="p-6 rounded-2xl bg-navy-900/80 border border-navy-800 text-center space-y-3">
+                    <div className="w-10 h-10 mx-auto rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center">
+                      <Database className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-white">
+                        No Historical Telemetry Ingested for {activeLocationData.name}
+                      </h4>
+                      <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                        Daily precipitation series pending onboarding into partition table. JalRakshak integrity rules strictly prevent proxy interpolation from Gorakhpur or Mahoba.
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-center gap-2 pt-1">
+                      <button
+                        onClick={() => {
+                          setSelectedLocation('gorakhpur');
+                          setTrendDistrict('gorakhpur');
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-sky-500/20 text-sky-300 hover:bg-sky-500/30 border border-sky-500/40 text-[11px] font-semibold transition"
+                      >
+                        View Gorakhpur Series
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedLocation('mahoba');
+                          setTrendDistrict('mahoba');
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 text-[11px] font-semibold transition"
+                      >
+                        View Mahoba Series
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <RainfallChart
+                    data={chartData}
+                    barColor={trendDistrict === 'gorakhpur' ? '#00e5ff' : '#f59e0b'}
+                    lineColor="#38bdf8"
+                    height={190}
+                  />
+                )}
               </div>
             </div>
 
@@ -436,7 +604,9 @@ export const MainDashboardView: React.FC = () => {
                 <li className="flex items-start space-x-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0" />
                   <span>
-                    {trendDistrict === 'gorakhpur'
+                    {!isConfiguredPilot
+                      ? `Observational pipeline for ${activeLocationData.name} (${activeLocationData.region}) is awaiting ingestion.`
+                      : trendDistrict === 'gorakhpur'
                       ? 'Recent rainfall is significantly higher than historical average for this period.'
                       : 'Accumulated precipitation is 58% below 10-year seasonal median.'}
                   </span>
@@ -444,14 +614,20 @@ export const MainDashboardView: React.FC = () => {
                 <li className="flex items-start space-x-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
                   <span>
-                    {trendDistrict === 'gorakhpur'
+                    {!isConfiguredPilot
+                      ? 'Zero data bleed: candidate districts do not inherit telemetry or hazard models from pilot zones.'
+                      : trendDistrict === 'gorakhpur'
                       ? 'Low-lying areas near Rapti river may be more vulnerable.'
                       : 'Soil moisture depletion indicates emerging agricultural stress in Bundelkhand.'}
                   </span>
                 </li>
                 <li className="flex items-start space-x-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0" />
-                  <span>Continuous monitoring is recommended. Decision-support prototype.</span>
+                  <span>
+                    {!isConfiguredPilot
+                      ? 'Hydrological and meteorological risk baselines are unconfigured until station observations are verified.'
+                      : 'Continuous monitoring is recommended. Decision-support prototype.'}
+                  </span>
                 </li>
               </ul>
             </div>
