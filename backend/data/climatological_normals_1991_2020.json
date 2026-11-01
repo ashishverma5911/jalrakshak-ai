@@ -1,0 +1,46 @@
+{
+  "district-gorakhpur": {
+    "region_id": "district-gorakhpur",
+    "reference_period": "1991-2020",
+    "source": "CHIRPS v2.0 / IMD Climatological Normals",
+    "spatial_resolution": "0.05\u00b0 (~5.3 km)",
+    "annual_normal_mm": 1151.4,
+    "monsoon_normal_mm": 996.7,
+    "monthly_normals_mm": {
+      "1": 18.9,
+      "2": 23.8,
+      "3": 17.1,
+      "4": 12.1,
+      "5": 32.3,
+      "6": 183.2,
+      "7": 345.3,
+      "8": 273.1,
+      "9": 195.1,
+      "10": 40.2,
+      "11": 3.0,
+      "12": 7.3
+    }
+  },
+  "district-mahoba": {
+    "region_id": "district-mahoba",
+    "reference_period": "1991-2020",
+    "source": "CHIRPS v2.0 / IMD Climatological Normals",
+    "spatial_resolution": "0.05\u00b0 (~5.3 km)",
+    "annual_normal_mm": 943.6,
+    "monsoon_normal_mm": 845.4,
+    "monthly_normals_mm": {
+      "1": 16.0,
+      "2": 17.1,
+      "3": 11.5,
+      "4": 5.1,
+      "5": 6.3,
+      "6": 107.5,
+      "7": 311.4,
+      "8": 273.0,
+      "9": 153.5,
+      "10": 27.1,
+      "11": 5.7,
+      "12": 9.4
+    }
+  }
+}
