@@ -15,8 +15,18 @@ _cors_env = os.getenv(
 )
 CORS_ORIGINS = [origin.strip() for origin in _cors_env.split(",") if origin.strip()]
 
+# Reverse Proxy & Trusted Proxy Configuration
+# Defaults to strict socket client IP; zero blind trust of arbitrary X-Forwarded-For
+TRUSTED_PROXIES = [
+    ip.strip()
+    for ip in os.getenv("TRUSTED_PROXIES", "127.0.0.1,::1").split(",")
+    if ip.strip()
+]
+TRUST_PROXY_HEADERS = os.getenv("TRUST_PROXY_HEADERS", "false").lower() in ("true", "1", "yes")
+
 # Stale data threshold in hours
 DATA_STALENESS_HOURS = float(os.getenv("DATA_STALENESS_HOURS", "24.0"))
+
 
 # Scientific Data Source Credentials & Endpoints
 EARTHDATA_USERNAME = os.getenv("EARTHDATA_USERNAME", "")
@@ -38,10 +48,14 @@ DB_POOL_SIZE = int(os.getenv("DB_POOL_SIZE", "5"))
 DB_MAX_OVERFLOW = int(os.getenv("DB_MAX_OVERFLOW", "10"))
 DB_POOL_TIMEOUT = float(os.getenv("DB_POOL_TIMEOUT", "30.0"))
 
-# Gemma 4 Runtime Adapter Settings
-GEMMA_API_URL = os.getenv("GEMMA_API_URL", "http://localhost:11434/api/generate")
-GEMMA_MODEL_NAME = os.getenv("GEMMA_MODEL_NAME", "gemma:4")
-GEMMA_API_KEY = os.getenv("GEMMA_API_KEY", "")
-GEMMA_TIMEOUT_SECONDS = float(os.getenv("GEMMA_TIMEOUT_SECONDS", "3.0"))
+# Gemma 4 Hosted Model Settings (Google-Hosted Gemma 4 API)
+# Architectural Decision: gemma-4-26b-a4b-it via Google AI Studio / Gemini API
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
+GEMMA_MODEL_NAME = os.getenv("GEMMA_MODEL_NAME", "gemma-4-26b-a4b-it")
+GEMMA_API_URL = os.getenv(
+    "GEMMA_API_URL",
+    "https://generativelanguage.googleapis.com/v1beta/models"
+)
+GEMMA_TIMEOUT_SECONDS = float(os.getenv("GEMMA_TIMEOUT_SECONDS", "5.0"))
 MAX_QUERY_LENGTH = int(os.getenv("MAX_QUERY_LENGTH", "1000"))
 
