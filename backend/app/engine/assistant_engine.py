@@ -9,7 +9,7 @@ import httpx
 from ..core.config import (
     GEMMA_API_URL,
     GEMMA_MODEL_NAME,
-    GEMMA_API_KEY,
+    GEMINI_API_KEY,
     GEMMA_TIMEOUT_SECONDS,
     MAX_QUERY_LENGTH,
 )
@@ -74,21 +74,38 @@ class GroundedAssistantEngine:
     @classmethod
     def retrieve_grounded_evidence(
         cls,
-        location: str,
-        query: str
+        location: Optional[str],
+        query: str,
+        mode: str = "demo"
     ) -> Dict[str, Any]:
         """
         Retrieves real calculated risk indicators, baselines, and limitations from
-        backend engines.
+        backend engines. Explicit user location takes absolute precedence over query keywords.
         """
+        loc_clean = (location or "").lower().replace("district-", "").strip()
         q_lower = query.lower()
-        target_loc = location.lower() if location else "gorakhpur"
 
-        # Auto-detect location context from query keywords if generic
-        if "mahoba" in q_lower or "drought" in q_lower or "bundelkhand" in q_lower:
-            target_loc = "mahoba"
-        elif "gorakhpur" in q_lower or "flood" in q_lower or "rapti" in q_lower:
-            target_loc = "gorakhpur"
+        # 1. Explicit user-selected location MUST take priority unconditionally.
+        if loc_clean and loc_clean not in ["", "all", "none"]:
+            target_loc = loc_clean
+        else:
+            # Only infer location from query if user did not supply an explicit location.
+            # Match EXPLICIT district names only. Hazard keywords (flood, drought, etc.)
+            # must NEVER change or infer the district!
+            if "mahoba" in q_lower:
+                target_loc = "mahoba"
+            elif "gorakhpur" in q_lower:
+                target_loc = "gorakhpur"
+            elif "lucknow" in q_lower:
+                target_loc = "lucknow"
+            elif "patna" in q_lower:
+                target_loc = "patna"
+            elif "gaya" in q_lower:
+                target_loc = "gaya"
+            elif "varanasi" in q_lower:
+                target_loc = "varanasi"
+            else:
+                target_loc = "gorakhpur"
 
         evidence_items: List[GroundedEvidenceItem] = []
         indicators_list: List[Dict[str, Any]] = []
@@ -98,10 +115,13 @@ class GroundedAssistantEngine:
             "retrieval_timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
+        is_demo = (mode == "demo")
+        data_mode = "DEMONSTRATION" if is_demo else "CACHED_VERIFIED"
+
         if target_loc == "mahoba":
             district_info = _ingestion_service.get_district_info("mahoba")
-            daily_df = _ingestion_service.load_daily_rainfall("mahoba")
-            assessment = DroughtRiskEngine.evaluate(district_info, daily_df)
+            daily_df = _ingestion_service.load_daily_rainfall("mahoba", mode=mode)
+            assessment = DroughtRiskEngine.evaluate(district_info, daily_df, mode=mode)
             timestamps["observation_period"] = assessment.assessment_period
             for ind in assessment.indicators:
                 evidence_items.append(
@@ -118,35 +138,45 @@ class GroundedAssistantEngine:
                 indicators_list.append(ind.model_dump())
             limitations.extend(assessment.scientific_notes)
             citations = [
-                f"{DATA_SOURCES_REGISTRY['chirps_daily']['name']} (0.05° Gridded Baseline)",
-                f"{DATA_SOURCES_REGISTRY['srtm_dem']['name']} (30m Elevation)",
-                f"{DATA_SOURCES_REGISTRY['upsdma_imd']['name']}",
+                f"{DATA_SOURCES_REGISTRY['chirps_daily']['source_name']} (0.05° Gridded Daily Series & 1991–2020 Normals)",
+                f"{DATA_SOURCES_REGISTRY['srtm_dem']['source_name']} (30m Elevation Benchmark)",
+                "WMO Standardized Precipitation Index (SPI) Methodology (WMO-No. 1090)",
+                f"{DATA_SOURCES_REGISTRY['upsdma_imd']['source_name']}",
+            ]
+        elif target_loc == "gorakhpur":
+            # Gorakhpur flood context
+            district_info = _ingestion_service.get_district_info("gorakhpur")
+            daily_df = _ingestion_service.load_daily_rainfall("gorakhpur", mode=mode)
+            assessment = FloodRiskEngine.evaluate(district_info, daily_df, mode=mode)
+            timestamps["observation_period"] = assessment.assessment_period
+            for ind in assessment.indicators:
+                evidence_items.append(
+                    GroundedEvidenceItem(
+                        indicator_id=ind.indicator_id,
+                        name=ind.name,
+                        value=ind.value,
+                        units=ind.units,
+                        category=ind.category,
+                        observation_period=ind.calculation_window,
+                        quality_status=ind.quality_status,
+                    )
+                )
+                indicators_list.append(ind.model_dump())
+            limitations.extend(assessment.scientific_notes)
+            citations = [
+                f"{DATA_SOURCES_REGISTRY['chirps_daily']['source_name']} (0.05° Gridded Daily Series & 1991–2020 Normals)",
+                f"{DATA_SOURCES_REGISTRY['srtm_dem']['source_name']} (30m Elevation Benchmark)",
+                f"{DATA_SOURCES_REGISTRY['upsdma_imd']['source_name']}",
             ]
         else:
-            # Default to Gorakhpur flood context
-            district_info = _ingestion_service.get_district_info("gorakhpur")
-            daily_df = _ingestion_service.load_daily_rainfall("gorakhpur")
-            assessment = FloodRiskEngine.evaluate(district_info, daily_df)
-            timestamps["observation_period"] = assessment.assessment_period
-            for ind in assessment.indicators:
-                evidence_items.append(
-                    GroundedEvidenceItem(
-                        indicator_id=ind.indicator_id,
-                        name=ind.name,
-                        value=ind.value,
-                        units=ind.units,
-                        category=ind.category,
-                        observation_period=ind.calculation_window,
-                        quality_status=ind.quality_status,
-                    )
-                )
-                indicators_list.append(ind.model_dump())
-            limitations.extend(assessment.scientific_notes)
-            citations = [
-                f"{DATA_SOURCES_REGISTRY['nasa_gpm_imerg']['name']} (0.1° Near Real-Time)",
-                f"{DATA_SOURCES_REGISTRY['chirps_daily']['name']} (0.05° 1991–2020 Baseline)",
-                f"{DATA_SOURCES_REGISTRY['srtm_dem']['name']} (30m Elevation)",
-                f"{DATA_SOURCES_REGISTRY['upsdma_imd']['name']}",
+            # Candidate district (e.g. Lucknow, Patna, Gaya, Varanasi)
+            is_demo = False
+            data_mode = "DATA_PENDING"
+            timestamps["observation_period"] = "Pending Ingestion"
+            citations = ["JalRakshak Multi-Region Registry"]
+            limitations = [
+                f"Candidate district '{target_loc.capitalize()}' is pending onboarding.",
+                "Zero data bleed policy enforced: candidate districts do not inherit pilot metrics or rainfall observations.",
             ]
 
         return {
@@ -156,56 +186,63 @@ class GroundedAssistantEngine:
             "limitations": limitations,
             "citations": citations,
             "timestamps": timestamps,
-            "is_demo_data": True,
+            "is_demo_data": is_demo,
+            "data_mode": data_mode,
         }
 
     @classmethod
-    async def query_local_gemma_runtime(
+    async def query_hosted_gemma_runtime(
         cls,
         prompt: str,
         system_instruction: str
     ) -> Tuple[bool, Optional[str]]:
         """
-        Attempts to call the local inference server (e.g., Ollama or custom Gemma 4 endpoint).
-        Returns (success, response_text).
+        Architecture: Google-Hosted Gemma 4 API (gemma-4-26b-a4b-it via Google AI Studio / Gemini API).
+        Requires GEMINI_API_KEY environment variable.
+        If credentials are absent or runtime is unreachable, safely falls back to deterministic grounded synthesis.
         """
+        if not GEMINI_API_KEY:
+            logger.debug("Google-Hosted Gemma 4 API key (GEMINI_API_KEY) not configured. Using deterministic grounded synthesis.")
+            return False, None
+
+        endpoint = f"{GEMMA_API_URL.rstrip('/')}/{GEMMA_MODEL_NAME}:generateContent?key={GEMINI_API_KEY}"
         payload = {
-            "model": GEMMA_MODEL_NAME,
-            "prompt": prompt,
-            "system": system_instruction,
-            "stream": False,
-            "options": {
+            "contents": [
+                {
+                    "role": "user",
+                    "parts": [{"text": f"{system_instruction}\n\nEvidence-Grounded User Inquiry: {prompt}"}]
+                }
+            ],
+            "generationConfig": {
                 "temperature": 0.2,
-                "num_predict": 512,
+                "maxOutputTokens": 512,
             },
         }
         headers = {"Content-Type": "application/json"}
-        if GEMMA_API_KEY:
-            headers["Authorization"] = f"Bearer {GEMMA_API_KEY}"
 
         try:
             async with httpx.AsyncClient(timeout=GEMMA_TIMEOUT_SECONDS) as client:
-                resp = await client.post(GEMMA_API_URL, json=payload, headers=headers)
+                resp = await client.post(endpoint, json=payload, headers=headers)
                 if resp.status_code == 200:
-                    try:
-                        data = resp.json()
-                        reply = None
-                        if isinstance(data, dict):
-                            reply = data.get("response") or data.get("text")
-                            if not reply and "choices" in data and isinstance(data["choices"], list) and len(data["choices"]) > 0:
-                                choice = data["choices"][0]
-                                if isinstance(choice, dict):
-                                    reply = choice.get("text") or choice.get("message", {}).get("content")
-                        if reply and isinstance(reply, str) and reply.strip():
-                            return True, reply.strip()
-                    except (ValueError, KeyError, TypeError) as parse_err:
-                        logger.warning(f"Failed to parse Gemma runtime response: {parse_err}")
+                    data = resp.json()
+                    candidates = data.get("candidates", [])
+                    if candidates and isinstance(candidates, list):
+                        parts = candidates[0].get("content", {}).get("parts", [])
+                        if parts and "text" in parts[0]:
+                            text = parts[0]["text"]
+                            if text and isinstance(text, str) and text.strip():
+                                return True, text.strip()
+                else:
+                    logger.warning(f"Hosted Gemma 4 API responded with status {resp.status_code}")
         except (httpx.ConnectError, httpx.TimeoutException, httpx.RequestError) as ex:
-            logger.info(f"Gemma 4 local runtime not reachable ({type(ex).__name__}): {ex}")
+            logger.info(f"Hosted Gemma 4 API endpoint unreachable ({type(ex).__name__}): {ex}")
         except Exception as general_ex:
-            logger.warning(f"Unexpected error querying Gemma runtime: {general_ex}")
+            logger.warning(f"Unexpected error querying hosted Gemma 4 API: {general_ex}")
 
         return False, None
+
+    # Backwards-compatible alias
+    query_local_gemma_runtime = query_hosted_gemma_runtime
 
     @classmethod
     def synthesize_transparent_grounded_answer(
@@ -219,14 +256,15 @@ class GroundedAssistantEngine:
         """
         q_lower = query.lower()
 
-        # Handle explicit question about demo data / live measurements
-        if any(term in q_lower for term in ["live measurement", "live data", "real-time data", "is this live", "is this demo", "is this real", "is data real"]):
+        # Handle explicit question about demo data / live measurements / data modes
+        if any(term in q_lower for term in ["live measurement", "live data", "real-time data", "is this live", "is this demo", "is this real", "is data real", "data mode", "provenance"]):
             return (
                 "[DATA TRANSPARENCY & PROVENANCE DISCLOSURE]\n\n"
-                "• **Current Execution Mode**: Local Reproducible Prototype Fixtures (`is_demo_data: true`).\n"
-                "• **Data Sources**: NASA GPM IMERG 0.1° gridded run and CHIRPS v2.0 daily historical baseline (1991–2020).\n"
-                "• **Live Feed Status**: Satellite feeds in this deployment are cached benchmark fixtures for Uttar Pradesh pilot districts (Gorakhpur & Mahoba). They are NOT live streaming satellite feeds.\n"
-                "• **Verification**: System health diagnostics report 'Local Reproducible Fixtures' under pipeline mode."
+                "• **Current Execution Mode**: Transparently distinguishes between prototype fixtures (`is_demo_data: true`, `DEMONSTRATION`) and verified observations (`CACHED_VERIFIED`).\n"
+                "• **Precipitation Baseline**: Daily continuous observation series (2015–2026) with 30-year climatological normals (1991–2020).\n"
+                "• **Terrain Data**: NASA SRTM 30m Digital Elevation Model static district topographic benchmarks.\n"
+                "• **Satellite Telemetry Status**: Near-real-time NASA GPM IMERG satellite feeds are currently not integrated into operational scoring. Live streaming feeds require authenticated institutional APIs.\n"
+                "• **Candidate Districts**: Offline with zero data bleed; metric indicators are pending onboarding."
             )
 
         # Handle out-of-scope queries (e.g. general knowledge, stocks, sports)
@@ -241,39 +279,104 @@ class GroundedAssistantEngine:
 
         loc = grounded_data["target_location"]
         indicators = {item.indicator_id: item.value for item in grounded_data["evidence_items"]}
+        data_mode = grounded_data.get("data_mode", "DEMONSTRATION")
 
         if loc == "gorakhpur":
-            rain_7d = indicators.get("gorakhpur_rain_7d", 286.0)
-            anomaly_7d = indicators.get("gorakhpur_anomaly_7d", 65.3)
-            rain_30d = indicators.get("gorakhpur_rain_30d", 512.0)
-            wet_days = int(indicators.get("gorakhpur_wet_days_30d", 18))
-            percentile = indicators.get("gorakhpur_percentile_7d", 94.2)
+            # Extract indicators with explicit None checks (0.0 is a valid measurement, NOT falsy missing data)
+            rain_7d = indicators.get("flood_precip_7d_accum")
+            anomaly_7d = indicators.get("flood_precip_7d_anomaly")
+            rain_30d = indicators.get("flood_precip_30d_accum")
+            wet_days = indicators.get("flood_heavy_rainfall_days")
+            if wet_days is None:
+                wet_days = indicators.get("flood_wet_days_7d")
+            percentile = indicators.get("flood_historical_percentile")
+            terrain_idx = indicators.get("flood_terrain_vulnerability")
+
+            rain_7d_str = f"{rain_7d:.1f} mm" if rain_7d is not None else "Data unavailable"
+            anomaly_7d_str = (
+                f"representing a departure of {anomaly_7d:+.1f}% from the 30-year climatological normal (1991–2020)"
+                if anomaly_7d is not None
+                else "departure from 30-year normal unavailable"
+            )
+            percentile_str = (
+                f"Current 7-day accumulation ranks at the {percentile:.1f}th percentile historically"
+                if percentile is not None
+                else "Historical percentile calculation unavailable (insufficient baseline records)"
+            )
+            rain_30d_str = f"{rain_30d:.1f} mm" if rain_30d is not None else "Data unavailable"
+            wet_days_str = (
+                f"recorded across {int(wet_days)} heavy rainfall days (daily precipitation >= 64.5 mm)"
+                if wet_days is not None
+                else "heavy rainfall day frequency unavailable"
+            )
+            terrain_str = (
+                f"{terrain_idx:.2f} (High vulnerability due to low slope < 0.5° and low elevation ~77.7m MSL)"
+                if terrain_idx is not None
+                else "Terrain elevation analysis unavailable"
+            )
+
+            mode_label = (
+                "Verified Daily Observational Series (1991–2020 Normal Baseline)"
+                if data_mode == "CACHED_VERIFIED"
+                else "Prototype Demonstration Fixture (Simulated Data)"
+            )
 
             answer = (
                 f"[GROUNDED DATA EXPLANATION — DETERMINISTIC ENGINE (Gemma 4 Runtime Unavailable)]\n\n"
-                f"• **Location Context**: Gorakhpur district, Eastern Uttar Pradesh (Rapti & Rohini River Basin, elevation ~84m MSL).\n"
-                f"• **7-Day Cumulative Rainfall**: {rain_7d:.1f} mm, representing a +{anomaly_7d:.1f}% departure above the 30-year climatological normal.\n"
-                f"• **Historical Comparison**: Current 7-day accumulation ranks at the {percentile:.1f}th percentile historically.\n"
-                f"• **30-Day Accumulation**: {rain_30d:.1f} mm recorded across {wet_days} wet days (daily precipitation >= 2.5 mm).\n"
+                f"• **Data Mode**: `{data_mode}` ({mode_label})\n"
+                f"• **Location Context**: Gorakhpur district, Eastern Uttar Pradesh (Rapti & Rohini River Basin, elevation ~77.7m MSL, flat alluvial plain).\n"
+                f"• **7-Day Cumulative Rainfall**: {rain_7d_str}, {anomaly_7d_str}.\n"
+                f"• **Historical Comparison**: {percentile_str}.\n"
+                f"• **30-Day Antecedent Rainfall**: {rain_30d_str} {wet_days_str}.\n"
+                f"• **Terrain Flood Vulnerability**: {terrain_str}.\n"
                 f"• **Authoritative Document Context**: Gorakhpur is categorized as a hyper-sensitive flood district in the UPSDMA 2024 Flood Mock Exercise Report.\n\n"
                 f"**Mandatory Scientific Boundaries**:\n"
                 f"1. Rainfall accumulation indicates meteorological water loading only. It does NOT model actual Rapti river gauge levels, upstream Nepal releases, or embankment integrity.\n"
                 f"2. For official flood evacuation orders and river stage warnings, refer directly to Central Water Commission (CWC) and UPSDMA bulletins."
             )
         elif loc == "mahoba":
-            rain_90d = indicators.get("mahoba_rain_90d", 62.0)
-            anomaly_90d = indicators.get("mahoba_anomaly_90d", -58.7)
-            kharif_def = indicators.get("mahoba_kharif_deficit", -72.0)
-            spi3 = indicators.get("mahoba_spi_3", -1.84)
-            dry_days = int(indicators.get("mahoba_consecutive_dry_days", 22))
+            rain_90d = indicators.get("drought_precip_90d_accum")
+            anomaly_90d = indicators.get("drought_precip_90d_anomaly")
+            kharif_def = indicators.get("drought_seasonal_deficit")
+            spi3 = indicators.get("drought_spi_3")
+            dry_days = indicators.get("drought_consecutive_dry_days")
+
+            rain_90d_str = f"{rain_90d:.1f} mm" if rain_90d is not None else "Data unavailable"
+            anomaly_90d_str = (
+                f"which is {anomaly_90d:+.1f}% departure from 30-year normal"
+                if anomaly_90d is not None
+                else "departure from 30-year normal unavailable"
+            )
+            kharif_str = (
+                f"Cumulative Kharif monsoon departure stands at {kharif_def:+.1f}% relative to the 845.4 mm normal"
+                if kharif_def is not None
+                else "Kharif seasonal departure unavailable"
+            )
+            spi3_str = (
+                f"{spi3:.2f} (classified under WMO criteria)"
+                if spi3 is not None
+                else "Calculation unavailable (insufficient data)"
+            )
+            dry_days_str = (
+                f"Longest unbroken consecutive dry spell reached {int(dry_days)} days (< 1.0 mm/day)"
+                if dry_days is not None
+                else "Dry spell persistence unavailable"
+            )
+
+            mode_label = (
+                "Verified Daily Observational Series (1991–2020 Normal Baseline)"
+                if data_mode == "CACHED_VERIFIED"
+                else "Prototype Demonstration Fixture (Simulated Data)"
+            )
 
             answer = (
                 f"[GROUNDED DATA EXPLANATION — DETERMINISTIC ENGINE (Gemma 4 Runtime Unavailable)]\n\n"
-                f"• **Location Context**: Mahoba district, Bundelkhand Plateau, Southern Uttar Pradesh (Elevation ~214m MSL, shallow rocky aquifers).\n"
-                f"• **90-Day Cumulative Rainfall**: {rain_90d:.1f} mm, which is {abs(anomaly_90d):.1f}% below the seasonal normal ({rain_90d:.1f} mm vs expected ~150 mm).\n"
-                f"• **Kharif Seasonal Deficit**: Departure stands at {kharif_def:.1f}%, indicating substantial monsoon shortfall.\n"
-                f"• **Standardized Precipitation Index (SPI-3)**: {spi3:.2f} (classified as 'Severely Dry' / approaching extreme meteorological drought).\n"
-                f"• **Dry Spell Persistence**: Longest consecutive dry spell reached {dry_days} days without meaningful precipitation (< 1.0 mm).\n\n"
+                f"• **Data Mode**: `{data_mode}` ({mode_label})\n"
+                f"• **Location Context**: Mahoba district, Bundelkhand Plateau, Southern Uttar Pradesh (Elevation ~197.1m MSL, crystalline granite bedrock).\n"
+                f"• **90-Day Cumulative Rainfall**: {rain_90d_str}, {anomaly_90d_str}.\n"
+                f"• **Kharif Monsoon Departure**: {kharif_str}.\n"
+                f"• **Standardized Precipitation Index (SPI-3)**: {spi3_str}.\n"
+                f"• **Dry Spell Persistence**: {dry_days_str}.\n\n"
                 f"**Mandatory Scientific Boundaries**:\n"
                 f"1. SPI-3 and rainfall deficits measure meteorological drought only. They do NOT measure root-zone soil moisture or crystalline fractured-rock aquifer depletion without ground telemetry.\n"
                 f"2. Crop irrigation advisories must be cross-referenced with UP Agriculture Department and Krishi Vigyan Kendra (KVK) bulletins."
@@ -281,10 +384,11 @@ class GroundedAssistantEngine:
         else:
             answer = (
                 f"[GROUNDED DATA EXPLANATION — DETERMINISTIC ENGINE (Gemma 4 Runtime Unavailable)]\n\n"
-                f"JalRakshak environmental intelligence decision-support prototype covers two primary pilot zones:\n"
-                f"1. **Gorakhpur**: Evaluated for heavy monsoon precipitation and alluvial Terai drainage vulnerability.\n"
-                f"2. **Mahoba**: Evaluated for Bundelkhand agro-climatic rainfall deficit and SPI-3 meteorological drought index.\n"
-                f"Please specify Gorakhpur or Mahoba for detailed grounded indicators."
+                f"• **District**: {loc.capitalize()}\n"
+                f"• **Data Status**: `DATA_PENDING` (Pending Onboarding)\n"
+                f"• **Notice**: Observational telemetry and scientific hazard calculations for candidate district '{loc.capitalize()}' are pending onboarding.\n"
+                f"• Candidate district '{loc.capitalize()}' is unlinked from active telemetry. Zero cross-district data bleed is strictly enforced.\n"
+                f"• No observations, risk indices, or rainfall measurements are interpolated from other districts."
             )
 
         return answer
@@ -293,7 +397,8 @@ class GroundedAssistantEngine:
     async def process_chat(
         cls,
         query: str,
-        location: Optional[str] = "gorakhpur"
+        location: Optional[str] = "gorakhpur",
+        mode: str = "demo"
     ) -> AssistantChatResponse:
         """
         Orchestrates prompt screening, evidence retrieval, model query (or honest fallback),
@@ -310,11 +415,12 @@ class GroundedAssistantEngine:
                 relevant_indicators=[],
                 data_timestamps={"timestamp": datetime.now(timezone.utc).isoformat()},
                 is_demo_data=True,
+                data_mode="DEMONSTRATION",
                 limitations=["Input rejected due to safety or prompt-injection defense check."],
             )
 
         clean_query = sanitized_or_error
-        grounded_data = cls.retrieve_grounded_evidence(location or "gorakhpur", clean_query)
+        grounded_data = cls.retrieve_grounded_evidence(location, clean_query, mode=mode)
 
         # Build strict system prompt for neural runtime if available
         system_prompt = (
@@ -323,9 +429,11 @@ class GroundedAssistantEngine:
             "STRICT RULES:\n"
             "1. ONLY rely on the provided evidence indicators, baselines, and official source metadata.\n"
             "2. NEVER invent, modify, or predict numbers, inundation depths, or probabilities.\n"
-            "3. Explicitly state that rainfall accumulation alone does NOT prove an imminent flood.\n"
-            "4. Explicitly state that SPI-3 does NOT directly measure soil moisture or groundwater.\n"
-            "5. Distinguish observed measurements from derived indicators and official alerts."
+            "3. If an indicator is missing or marked as Data Unavailable, explicitly state it is unavailable; NEVER guess or invent a value.\n"
+            "4. NEVER substitute or interpolate data from other districts. If a candidate district is requested, state DATA_PENDING.\n"
+            "5. Explicitly state that rainfall accumulation alone does NOT prove an imminent flood.\n"
+            "6. Explicitly state that SPI-3 does NOT directly measure soil moisture or groundwater.\n"
+            "7. Distinguish observed measurements from derived indicators and official alerts."
         )
 
         user_prompt_with_context = (
@@ -366,5 +474,6 @@ class GroundedAssistantEngine:
             relevant_indicators=grounded_data["indicators_list"],
             data_timestamps=grounded_data["timestamps"],
             is_demo_data=grounded_data["is_demo_data"],
+            data_mode=grounded_data.get("data_mode", "DEMONSTRATION"),
             limitations=grounded_data["limitations"],
         )

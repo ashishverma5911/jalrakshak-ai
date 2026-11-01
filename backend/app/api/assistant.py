@@ -19,7 +19,8 @@ async def assistant_chat(request: AssistantChatRequest) -> AssistantChatResponse
     try:
         response = await GroundedAssistantEngine.process_chat(
             query=request.query,
-            location=request.location
+            location=request.location,
+            mode=request.mode if hasattr(request, "mode") and request.mode else "demo"
         )
         return response
     except Exception as e:

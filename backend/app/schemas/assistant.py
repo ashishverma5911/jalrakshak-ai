@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 class AssistantChatRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=1000, description="User question or inquiry")
     location: Optional[str] = Field("gorakhpur", description="Focus pilot location (gorakhpur, mahoba, or all)")
+    mode: Optional[str] = Field("demo", description="Data mode: 'demo' or 'verified'")
 
 class GroundedEvidenceItem(BaseModel):
     indicator_id: str
@@ -23,6 +24,7 @@ class AssistantChatResponse(BaseModel):
     relevant_indicators: List[Dict[str, Any]]
     data_timestamps: Dict[str, str]
     is_demo_data: bool = True
+    data_mode: Optional[str] = "DEMONSTRATION"
     limitations: List[str]
     disclaimer: str = (
         "JalRakshak Grounded Assistant is an environmental decision-support tool. "
