@@ -1,19 +1,16 @@
 import React, { useState } from 'react';
 import {
-  ShieldCheck,
-  CheckCircle2,
   AlertTriangle,
   PhoneCall,
   ExternalLink,
   Flame,
   Waves,
   Heart,
-  FileText,
   Copy,
   Check,
   Search,
   Info,
-  ShieldAlert,
+  CheckCircle2,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Card } from '../components/common/Card';
@@ -128,41 +125,41 @@ export const PreparednessView: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Official Alert Distinction Banner */}
-      <div className="p-3.5 rounded-2xl bg-navy-900/90 border border-cyan-800/60 text-xs text-slate-300 flex flex-col md:flex-row md:items-start justify-between gap-3">
+      <div className="p-3.5 rounded-2xl bg-white border border-slate-200 text-xs text-slate-700 flex flex-col md:flex-row md:items-start justify-between gap-3 shadow-sm">
         <div className="flex items-start space-x-3">
-          <Info className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
+          <Info className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
           <div className="leading-relaxed">
-            <strong className="text-white">Decision-Support Notice:</strong> JalRakshak provides verified official
+            <strong className="text-slate-900">Decision-Support Notice:</strong> JalRakshak provides verified official
             reference links and community guidelines. It does <strong>not</strong> ingest live emergency alerts or
             issue official warnings. In case of an emergency, always follow evacuation instructions and alerts issued
             by the District Magistrate, UPSDMA, and Central Water Commission.
           </div>
         </div>
-        <span className="text-[11px] px-2.5 py-1 rounded-lg bg-navy-800 text-cyan-300 border border-cyan-700/50 font-mono shrink-0">
+        <span className="text-[11px] px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 font-mono font-semibold shrink-0">
           PROTOTYPE ADVISORY
         </span>
       </div>
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-navy-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 bg-emerald-950/70 px-2 py-0.5 rounded border border-emerald-800/80">
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200">
               Community Resilience
             </span>
-            <span className="text-xs text-slate-400 font-mono">Action Guides & Contacts</span>
+            <span className="text-xs text-slate-500 font-mono">Action Guides & Contacts</span>
           </div>
-          <h1 className="text-2xl lg:text-3xl font-extrabold text-white mt-1">
+          <h1 className="text-2xl lg:text-3xl font-extrabold text-slate-900 mt-1">
             Preparedness & Safety
           </h1>
-          <p className="text-xs lg:text-sm text-slate-300">
+          <p className="text-xs lg:text-sm text-slate-600">
             Actionable emergency guidelines, persistent preparedness checklists and verified official government contacts.
           </p>
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex border-b border-navy-800 text-sm">
+      <div className="flex border-b border-slate-200 text-sm">
         {[
           { key: 'flood', label: 'Flood Preparedness', icon: Waves },
           { key: 'drought', label: 'Drought Preparedness', icon: Flame },
@@ -174,10 +171,10 @@ export const PreparednessView: React.FC = () => {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
-              className={`flex items-center space-x-2 px-4 py-2.5 font-medium border-b-2 transition-all ${
+              className={`flex items-center space-x-2 px-4 py-2.5 font-semibold border-b-2 transition-all ${
                 activeTab === tab.key
-                  ? 'border-cyan-400 text-cyan-300 bg-cyan-950/30'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
+                  ? 'border-blue-600 text-blue-700 bg-blue-50/60'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -192,12 +189,12 @@ export const PreparednessView: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-8 space-y-4">
             <Card variant="flood">
-              <div className="flex items-center justify-between pb-3 border-b border-navy-800">
-                <h3 className="text-base font-bold text-white flex items-center space-x-2">
-                  <Waves className="w-5 h-5 text-cyan-400" />
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 className="text-base font-bold text-slate-900 flex items-center space-x-2">
+                  <Waves className="w-5 h-5 text-blue-600" />
                   <span>General Flood Action Guidelines (Gorakhpur / Eastern UP)</span>
                 </h3>
-                <span className="text-[11px] text-cyan-300 font-mono">
+                <span className="text-[11px] text-blue-700 font-mono font-semibold">
                   {Object.values(checklistState).filter(Boolean).length} / 5 Checked
                 </span>
               </div>
@@ -232,24 +229,24 @@ export const PreparednessView: React.FC = () => {
                   <div
                     key={item.id}
                     onClick={() => toggleChecklistItem(item.id)}
-                    className={`p-3.5 rounded-xl border cursor-pointer transition flex items-start space-x-3.5 interactive-btn ${
+                    className={`p-3.5 rounded-xl border cursor-pointer transition flex items-start space-x-3.5 interactive-btn shadow-sm ${
                       checklistState[item.id]
-                        ? 'bg-cyan-500/10 border-cyan-500/40'
-                        : 'bg-navy-900/60 border-navy-800 hover:bg-navy-850'
+                        ? 'bg-blue-50 border-blue-300'
+                        : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
                     }`}
                   >
                     <div
                       className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-0.5 transition ${
                         checklistState[item.id]
-                          ? 'bg-cyan-500 text-navy-950 font-bold'
-                          : 'border border-slate-500 bg-navy-800'
+                          ? 'bg-blue-600 text-white font-bold'
+                          : 'border border-slate-300 bg-white'
                       }`}
                     >
                       {checklistState[item.id] && <CheckCircle2 className="w-4 h-4 stroke-[3]" />}
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-white">{item.title}</div>
-                      <div className="text-xs text-slate-300 mt-0.5 leading-relaxed">{item.desc}</div>
+                      <div className="text-sm font-semibold text-slate-900">{item.title}</div>
+                      <div className="text-xs text-slate-600 mt-0.5 leading-relaxed">{item.desc}</div>
                     </div>
                   </div>
                 ))}
@@ -258,26 +255,26 @@ export const PreparednessView: React.FC = () => {
           </div>
 
           <div className="lg:col-span-4 space-y-4">
-            <Card className="bg-rose-950/40 border border-rose-800/40">
-              <h4 className="text-sm font-bold text-rose-300 flex items-center space-x-2">
-                <AlertTriangle className="w-4 h-4 text-rose-400" />
+            <Card className="bg-rose-50 border border-rose-200 shadow-sm">
+              <h4 className="text-sm font-bold text-rose-900 flex items-center space-x-2">
+                <AlertTriangle className="w-4 h-4 text-rose-600" />
                 <span>Life-Threatening Emergency?</span>
               </h4>
-              <p className="mt-2 text-xs text-slate-200 leading-relaxed">
+              <p className="mt-2 text-xs text-slate-700 leading-relaxed">
                 If trapped by sudden riverine swelling, embankment breaches, or flash floods, immediately call state emergency authorities:
               </p>
-              <div className="mt-3 p-3 rounded-xl bg-navy-950/80 border border-rose-900/50 space-y-2">
+              <div className="mt-3 p-3 rounded-xl bg-white border border-rose-200 space-y-2">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-400">UP Disaster State Control</span>
-                  <a href="tel:1070" className="font-mono font-bold text-cyan-300 text-sm hover:underline">1070</a>
+                  <span className="text-slate-600">UP Disaster State Control</span>
+                  <a href="tel:1070" className="font-mono font-bold text-rose-700 text-sm hover:underline">1070</a>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-400">Gorakhpur DM Control Room</span>
-                  <a href="tel:1077" className="font-mono font-bold text-cyan-300 text-sm hover:underline">1077</a>
+                  <span className="text-slate-600">Gorakhpur DM Control Room</span>
+                  <a href="tel:1077" className="font-mono font-bold text-rose-700 text-sm hover:underline">1077</a>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-400">National Emergency Number</span>
-                  <a href="tel:112" className="font-mono font-bold text-cyan-300 text-sm hover:underline">112</a>
+                  <span className="text-slate-600">National Emergency Number</span>
+                  <a href="tel:112" className="font-mono font-bold text-rose-700 text-sm hover:underline">112</a>
                 </div>
               </div>
             </Card>
@@ -289,8 +286,8 @@ export const PreparednessView: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-8 space-y-4">
             <Card variant="drought">
-              <h3 className="text-base font-bold text-white pb-3 border-b border-navy-800 flex items-center space-x-2">
-                <Flame className="w-5 h-5 text-amber-400" />
+              <h3 className="text-base font-bold text-slate-900 pb-3 border-b border-slate-100 flex items-center space-x-2">
+                <Flame className="w-5 h-5 text-amber-600" />
                 <span>Drought Preparedness & Mitigation (Mahoba / Bundelkhand)</span>
               </h3>
               <div className="mt-4 space-y-3">
@@ -319,24 +316,24 @@ export const PreparednessView: React.FC = () => {
                   <div
                     key={item.id}
                     onClick={() => toggleChecklistItem(item.id)}
-                    className={`p-3.5 rounded-xl border cursor-pointer transition flex items-start space-x-3.5 interactive-btn ${
+                    className={`p-3.5 rounded-xl border cursor-pointer transition flex items-start space-x-3.5 interactive-btn shadow-sm ${
                       checklistState[item.id]
-                        ? 'bg-amber-500/10 border-amber-500/40'
-                        : 'bg-navy-900/60 border-navy-800 hover:bg-navy-850'
+                        ? 'bg-amber-50 border-amber-300'
+                        : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
                     }`}
                   >
                     <div
                       className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-0.5 transition ${
                         checklistState[item.id]
-                          ? 'bg-amber-500 text-navy-950 font-bold'
-                          : 'border border-slate-500 bg-navy-800'
+                          ? 'bg-amber-600 text-white font-bold'
+                          : 'border border-slate-300 bg-white'
                       }`}
                     >
                       {checklistState[item.id] && <CheckCircle2 className="w-4 h-4 stroke-[3]" />}
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-white">{item.title}</div>
-                      <div className="text-xs text-slate-300 mt-0.5 leading-relaxed">{item.desc}</div>
+                      <div className="text-sm font-semibold text-slate-900">{item.title}</div>
+                      <div className="text-xs text-slate-600 mt-0.5 leading-relaxed">{item.desc}</div>
                     </div>
                   </div>
                 ))}
@@ -346,16 +343,16 @@ export const PreparednessView: React.FC = () => {
 
           <div className="lg:col-span-4 space-y-4">
             <Card variant="drought">
-              <h4 className="text-sm font-bold text-amber-300 flex items-center space-x-2">
-                <Heart className="w-4 h-4 text-amber-400" />
+              <h4 className="text-sm font-bold text-amber-900 flex items-center space-x-2">
+                <Heart className="w-4 h-4 text-amber-600" />
                 <span>Bundelkhand Assistance Schemes</span>
               </h4>
-              <p className="mt-2 text-xs text-slate-200 leading-relaxed">
+              <p className="mt-2 text-xs text-slate-700 leading-relaxed">
                 Farmers in Mahoba district can leverage PMKSY (Khet Talab farm pond scheme) and UP Agriculture drought relief funds.
               </p>
-              <div className="mt-3 p-3 rounded-xl bg-navy-950/80 border border-amber-900/40 text-xs text-slate-300 space-y-1">
-                <div>Mahoba Water Helpline: <strong className="text-amber-300">1077</strong></div>
-                <div>Kisan Call Centre: <strong className="text-amber-300">1800-180-1551</strong></div>
+              <div className="mt-3 p-3 rounded-xl bg-slate-50 border border-amber-200 text-xs text-slate-700 space-y-1">
+                <div>Mahoba Water Helpline: <strong className="text-amber-800">1077</strong></div>
+                <div>Kisan Call Centre: <strong className="text-amber-800">1800-180-1551</strong></div>
               </div>
             </Card>
           </div>
@@ -365,34 +362,34 @@ export const PreparednessView: React.FC = () => {
       {activeTab === 'contacts' && (
         <div className="space-y-4">
           {/* Search bar for contacts */}
-          <div className="p-3 rounded-2xl bg-navy-900 border border-navy-800 flex items-center space-x-2.5 max-w-md">
+          <div className="p-3 rounded-2xl bg-white border border-slate-200 flex items-center space-x-2.5 max-w-md shadow-sm">
             <Search className="w-4 h-4 text-slate-400" />
             <input
               type="text"
               value={searchContact}
               onChange={(e) => setSearchContact(e.target.value)}
               placeholder="Filter by name, district, or role..."
-              className="bg-transparent text-xs text-white placeholder-slate-400 focus:outline-none w-full"
+              className="bg-transparent text-xs text-slate-900 placeholder-slate-400 focus:outline-none w-full"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredContacts.map((c, i) => (
-              <Card key={i} className="p-4 flex flex-col justify-between">
+              <Card key={i} className="p-4 flex flex-col justify-between shadow-sm">
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
                       {c.category}
                     </span>
                     <button
                       onClick={() => handleCopyPhone(c.fullPhone)}
-                      className="text-slate-400 hover:text-cyan-300 flex items-center gap-1 text-[11px]"
+                      className="text-slate-400 hover:text-blue-600 flex items-center gap-1 text-[11px]"
                       title="Copy Phone"
                     >
                       {copiedPhone === c.fullPhone ? (
                         <>
-                          <Check className="w-3 h-3 text-emerald-400" />
-                          <span className="text-emerald-400">Copied</span>
+                          <Check className="w-3 h-3 text-emerald-600" />
+                          <span className="text-emerald-700 font-semibold">Copied</span>
                         </>
                       ) : (
                         <>
@@ -402,18 +399,18 @@ export const PreparednessView: React.FC = () => {
                       )}
                     </button>
                   </div>
-                  <h4 className="font-bold text-sm text-white mt-2">{c.title}</h4>
-                  <p className="text-xs text-slate-400 mt-1 leading-snug">{c.role}</p>
+                  <h4 className="font-bold text-sm text-slate-900 mt-2">{c.title}</h4>
+                  <p className="text-xs text-slate-500 mt-1 leading-snug">{c.role}</p>
                 </div>
-                <div className="mt-4 pt-3 border-t border-navy-800 flex items-center justify-between">
+                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
                   <a
                     href={`tel:${c.phone}`}
-                    className="font-mono text-cyan-300 hover:underline font-bold text-sm flex items-center gap-1"
+                    className="font-mono text-blue-700 hover:underline font-bold text-sm flex items-center gap-1"
                   >
                     <PhoneCall className="w-3 h-3" />
                     <span>{c.phone}</span>
                   </a>
-                  <span className="text-[11px] text-slate-400 font-mono">{c.website}</span>
+                  <span className="text-[11px] text-slate-500 font-mono">{c.website}</span>
                 </div>
               </Card>
             ))}
@@ -424,27 +421,27 @@ export const PreparednessView: React.FC = () => {
       {activeTab === 'resources' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {OFFICIAL_RESOURCES.map((res, i) => (
-            <Card key={i} className="p-5 flex flex-col justify-between">
+            <Card key={i} className="p-5 flex flex-col justify-between shadow-sm">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800/80 font-mono">
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-mono font-semibold">
                     {res.type}
                   </span>
                   <a
                     href={res.url}
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="text-cyan-400 hover:text-cyan-300 transition"
+                    className="text-blue-600 hover:text-blue-800 transition"
                     title={`Open ${res.title}`}
                   >
                     <ExternalLink className="w-4 h-4" />
                   </a>
                 </div>
-                <h4 className="font-bold text-sm text-white">{res.title}</h4>
-                <div className="text-xs text-cyan-300 font-medium mt-0.5">{res.role}</div>
-                <p className="text-xs text-slate-300 mt-2 leading-relaxed">{res.desc}</p>
+                <h4 className="font-bold text-sm text-slate-900">{res.title}</h4>
+                <div className="text-xs text-blue-700 font-medium mt-0.5">{res.role}</div>
+                <p className="text-xs text-slate-600 mt-2 leading-relaxed">{res.desc}</p>
               </div>
-              <div className="mt-4 pt-2 border-t border-navy-800 flex items-center justify-between text-[11px] text-cyan-300 font-mono">
+              <div className="mt-4 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-blue-700 font-mono font-semibold">
                 <a
                   href={res.url}
                   target="_blank"
@@ -454,7 +451,7 @@ export const PreparednessView: React.FC = () => {
                   <span>{res.url}</span>
                   <ExternalLink className="w-3 h-3" />
                 </a>
-                <span className="text-slate-500 text-[10px]">Reference Link</span>
+                <span className="text-slate-500 text-[10px] font-normal">Reference Link</span>
               </div>
             </Card>
           ))}

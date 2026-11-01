@@ -1,15 +1,14 @@
 import React from 'react';
 import {
   ResponsiveContainer,
-  BarChart,
-  Bar,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
   ComposedChart,
+  Bar,
+  Line,
 } from 'recharts';
 
 export interface RainfallDataPoint {
@@ -28,8 +27,8 @@ interface RainfallChartProps {
 
 export const RainfallChart: React.FC<RainfallChartProps> = ({
   data,
-  barColor = '#00e5ff',
-  lineColor = '#38bdf8',
+  barColor = '#0284c7',
+  lineColor = '#2563eb',
   height = 220,
   yAxisLabel = 'Rainfall (mm)',
 }) => {
@@ -40,30 +39,31 @@ export const RainfallChart: React.FC<RainfallChartProps> = ({
           <defs>
             <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={barColor} stopOpacity={0.9} />
-              <stop offset="100%" stopColor={barColor} stopOpacity={0.3} />
+              <stop offset="100%" stopColor={barColor} stopOpacity={0.4} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.07)" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(0, 0, 0, 0.06)" vertical={false} />
           <XAxis
             dataKey="date"
-            stroke="#64748b"
-            tick={{ fill: '#94a3b8', fontSize: 11 }}
+            stroke="#94a3b8"
+            tick={{ fill: '#64748b', fontSize: 11 }}
             tickLine={false}
           />
           <YAxis
-            stroke="#64748b"
-            tick={{ fill: '#94a3b8', fontSize: 11 }}
+            stroke="#94a3b8"
+            tick={{ fill: '#64748b', fontSize: 11 }}
             tickLine={false}
             label={{ value: yAxisLabel, angle: -90, position: 'insideLeft', fill: '#64748b', fontSize: 10, offset: 10 }}
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: '#0a1d2c',
-              borderColor: 'rgba(56, 120, 165, 0.4)',
+              backgroundColor: '#ffffff',
+              borderColor: '#e2e8f0',
               borderRadius: '12px',
-              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
-              color: '#f8fafc',
+              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+              color: '#0f172a',
               fontSize: '12px',
+              fontWeight: 500,
             }}
             formatter={(value: any, name: any) => {
               if (name === 'rainfall' || name === 'Daily Rainfall') {
@@ -77,7 +77,7 @@ export const RainfallChart: React.FC<RainfallChartProps> = ({
           <Legend
             verticalAlign="top"
             align="right"
-            wrapperStyle={{ paddingBottom: '10px', fontSize: '11px', color: '#cbd5e1' }}
+            wrapperStyle={{ paddingBottom: '10px', fontSize: '11px', color: '#475569', fontWeight: 500 }}
           />
           <Bar
             dataKey="rainfall"

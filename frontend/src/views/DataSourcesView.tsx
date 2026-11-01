@@ -4,13 +4,11 @@ import {
   BookOpen,
   HelpCircle,
   AlertTriangle,
-  ExternalLink,
   ShieldAlert,
   Info,
   Search,
   CheckCircle2,
   RefreshCw,
-  Cpu,
   Upload,
   FileText,
   AlertCircle,
@@ -121,8 +119,8 @@ const SOURCES_DATA = [
 export const DataSourcesView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'sources' | 'uploads' | 'methodology' | 'indicators' | 'limitations'>('sources');
   const [searchFilter, setSearchFilter] = useState('');
-  const [liveSources, setLiveSources] = useState<SourceMetadata[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [, setLiveSources] = useState<SourceMetadata[]>([]);
+  const [, setIsLoading] = useState(false);
 
   // Manual Upload State
   const [selectedUploadFile, setSelectedUploadFile] = useState<File | null>(null);
@@ -209,25 +207,25 @@ export const DataSourcesView: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-navy-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-cyan-400 bg-cyan-950/70 px-2 py-0.5 rounded border border-cyan-800/80">
+            <span className="text-xs font-bold uppercase tracking-wider text-blue-700 bg-blue-100 px-2 py-0.5 rounded border border-blue-200">
               Open Science & Provenance
             </span>
-            <span className="text-xs text-slate-400 font-mono">Transparency Engine</span>
+            <span className="text-xs text-slate-500 font-mono">Transparency Engine</span>
           </div>
-          <h1 className="text-2xl lg:text-3xl font-extrabold text-white mt-1">
+          <h1 className="text-2xl lg:text-3xl font-extrabold text-slate-900 mt-1">
             Data Sources & Methodology
           </h1>
-          <p className="text-xs lg:text-sm text-slate-300">
+          <p className="text-xs lg:text-sm text-slate-600">
             Complete transparency on geospatial datasets, scientific formulas, indicators, and model limitations.
           </p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-navy-800 text-sm overflow-x-auto">
+      <div className="flex border-b border-slate-200 text-sm overflow-x-auto">
         {[
           { key: 'sources', label: 'Data Sources & Provenance', icon: Database },
           { key: 'uploads', label: 'Scientific Uploads', icon: Upload },
@@ -240,10 +238,10 @@ export const DataSourcesView: React.FC = () => {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
-              className={`flex items-center space-x-2 px-4 py-2.5 font-medium border-b-2 transition-all whitespace-nowrap ${
+              className={`flex items-center space-x-2 px-4 py-2.5 font-semibold border-b-2 transition-all whitespace-nowrap ${
                 activeTab === tab.key
-                  ? 'border-cyan-400 text-cyan-300 bg-cyan-950/30'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
+                  ? 'border-blue-600 text-blue-700 bg-blue-50/60'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -257,10 +255,10 @@ export const DataSourcesView: React.FC = () => {
       {activeTab === 'sources' && (
         <div className="space-y-4">
           {/* Data Honesty Notice */}
-          <div className="p-3.5 rounded-2xl bg-navy-900/90 border border-cyan-800/60 text-xs text-slate-300 flex items-start space-x-3">
-            <Info className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+          <div className="p-3.5 rounded-2xl bg-blue-50 border border-blue-200 text-xs text-blue-900 flex items-start space-x-3 shadow-sm">
+            <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
             <div className="leading-relaxed">
-              <strong className="text-white">Data Provenance Integrity Notice:</strong> Datasets below are either
+              <strong className="text-slate-900">Data Provenance Integrity Notice:</strong> Datasets below are either
               locally cached verified climatological baselines (CHIRPS 1981–2024), static terrain benchmarks (SRTM DEM),
               or reproducible prototype fixtures (simulated GPM daily series). No source is falsely claimed as a live,
               uninterrupted streaming network feed.
@@ -268,75 +266,75 @@ export const DataSourcesView: React.FC = () => {
           </div>
 
           {/* Search bar for sources */}
-          <div className="p-3 rounded-2xl bg-navy-900 border border-navy-800 flex items-center space-x-2.5 max-w-md">
+          <div className="p-3 rounded-2xl bg-white border border-slate-200 flex items-center space-x-2.5 max-w-md shadow-sm">
             <Search className="w-4 h-4 text-slate-400" />
             <input
               type="text"
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
               placeholder="Filter by keyword (e.g. satellite, chirps, elevation)..."
-              className="bg-transparent text-xs text-white placeholder-slate-400 focus:outline-none w-full"
+              className="bg-transparent text-xs text-slate-900 placeholder-slate-400 focus:outline-none w-full"
             />
           </div>
 
           <div className="space-y-4">
             {filteredSources.map((s, i) => (
-              <Card key={i} className="p-5">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 pb-3 border-b border-navy-800">
+              <Card key={i} className="p-5 shadow-sm">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 pb-3 border-b border-slate-100">
                   <div>
-                    <h3 className="text-base font-bold text-white flex items-center space-x-2">
+                    <h3 className="text-base font-bold text-slate-900 flex items-center space-x-2">
                       <span>{s.name}</span>
                       {s.isDemo ? (
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono">
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 font-mono font-semibold">
                           DEMO / LOCAL FIXTURE
                         </span>
                       ) : (
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800 font-mono">
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-mono font-semibold">
                           AUTHORITATIVE BENCHMARK
                         </span>
                       )}
                     </h3>
-                    <p className="text-xs text-slate-400 mt-0.5">{s.provider}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{s.provider}</p>
                   </div>
-                  <div className="text-xs text-slate-300 font-mono bg-navy-850 px-2.5 py-1 rounded-lg border border-navy-750">
-                    Status: <strong className="text-cyan-300">{s.operationalStatus}</strong>
+                  <div className="text-xs text-slate-600 font-mono bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">
+                    Status: <strong className="text-blue-700">{s.operationalStatus}</strong>
                   </div>
                 </div>
 
                 <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                   <div>
-                    <span className="text-slate-400 block">Parameter & Units</span>
-                    <span className="font-semibold text-white">{s.param} ({s.units})</span>
+                    <span className="text-slate-500 block">Parameter & Units</span>
+                    <span className="font-semibold text-slate-900">{s.param} ({s.units})</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block">Spatial Resolution</span>
-                    <span className="font-semibold text-white">{s.spatial}</span>
+                    <span className="text-slate-500 block">Spatial Resolution</span>
+                    <span className="font-semibold text-slate-900">{s.spatial}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block">Temporal Resolution</span>
-                    <span className="font-semibold text-white">{s.temporal}</span>
+                    <span className="text-slate-500 block">Temporal Resolution</span>
+                    <span className="font-semibold text-slate-900">{s.temporal}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block">Historical Reference</span>
-                    <span className="font-semibold text-white">{s.coverage}</span>
+                    <span className="text-slate-500 block">Historical Reference</span>
+                    <span className="font-semibold text-slate-900">{s.coverage}</span>
                   </div>
                 </div>
 
-                <div className="mt-3 pt-3 border-t border-navy-850 space-y-2 text-xs">
+                <div className="mt-3 pt-3 border-t border-slate-100 space-y-2 text-xs">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px]">
-                    <span className="text-slate-400">Retrieval Provenance:</span>
-                    <span className="font-mono text-slate-300">{s.retrieval}</span>
+                    <span className="text-slate-500">Retrieval Provenance:</span>
+                    <span className="font-mono text-slate-700">{s.retrieval}</span>
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px]">
-                    <span className="text-slate-400">Access Protocol:</span>
-                    <span className="font-mono text-cyan-300">{s.access}</span>
+                    <span className="text-slate-500">Access Protocol:</span>
+                    <span className="font-mono text-blue-700 font-semibold">{s.access}</span>
                   </div>
-                  <p className="text-slate-300 text-xs italic pt-1 leading-relaxed">{s.limitations}</p>
+                  <p className="text-slate-600 text-xs italic pt-1 leading-relaxed">{s.limitations}</p>
                   <div className="flex gap-1.5 pt-1">
                     {s.tags.map((t, ti) => (
                       <span
                         key={ti}
-                        className="text-[10px] px-2 py-0.5 rounded-full bg-navy-850 border border-navy-750 text-slate-300 font-mono"
+                        className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-600 font-mono font-medium"
                       >
                         {t}
                       </span>
@@ -353,10 +351,10 @@ export const DataSourcesView: React.FC = () => {
       {activeTab === 'uploads' && (
         <div className="space-y-6">
           {/* Security & Quarantine Notice */}
-          <div className="p-4 rounded-2xl bg-navy-900/90 border border-cyan-800/60 text-xs text-slate-300 flex items-start space-x-3">
-            <ShieldAlert className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
+          <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-xs text-blue-900 flex items-start space-x-3 shadow-sm">
+            <ShieldAlert className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
             <div className="leading-relaxed space-y-1">
-              <div className="font-bold text-white text-sm">
+              <div className="font-bold text-slate-900 text-sm">
                 Quarantine Sandbox & True Binary Content Inspection
               </div>
               <p>
@@ -368,18 +366,18 @@ export const DataSourcesView: React.FC = () => {
           </div>
 
           {/* Ephemeral Demo Storage Transparency Notice */}
-          <div className="p-3.5 rounded-2xl bg-amber-950/40 border border-amber-600/40 flex items-start space-x-3 text-xs text-amber-200/90">
-            <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+          <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 flex items-start space-x-3 text-xs text-amber-900 shadow-sm">
+            <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <div className="leading-relaxed">
-              <strong className="text-amber-300 font-semibold">₹0 Public Demo — Ephemeral Upload Notice: </strong>
+              <strong className="text-amber-900 font-semibold">₹0 Public Demo — Ephemeral Upload Notice: </strong>
               In this zero-cost demonstration environment, user-uploaded datasets and validation reports are stored in temporary container filesystem storage. Uploads are ephemeral and reset whenever the free container restarts or redeploys. Core scientific baselines (CHIRPS historical rainfall, IMD normals, and Survey of India boundaries) remain permanently available.
             </div>
           </div>
 
           {/* Upload Form Card */}
-          <Card className="p-5">
-            <h3 className="text-sm font-bold text-white pb-3 border-b border-navy-800 flex items-center space-x-2">
-              <Upload className="w-4 h-4 text-cyan-400" />
+          <Card className="p-5 shadow-sm">
+            <h3 className="text-sm font-bold text-slate-900 pb-3 border-b border-slate-100 flex items-center space-x-2">
+              <Upload className="w-4 h-4 text-blue-600" />
               <span>Upload Environmental Dataset</span>
             </h3>
 
@@ -387,13 +385,13 @@ export const DataSourcesView: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* District Target */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     Target District Context
                   </label>
                   <select
                     value={uploadTargetRegion}
                     onChange={(e) => setUploadTargetRegion(e.target.value)}
-                    className="w-full bg-navy-900 border border-navy-750 text-white rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-white border border-slate-300 text-slate-900 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-blue-500 shadow-sm"
                   >
                     <option value="district-gorakhpur">Gorakhpur (Eastern UP — Flood Pilot)</option>
                     <option value="district-mahoba">Mahoba (Bundelkhand — Drought Pilot)</option>
@@ -402,36 +400,36 @@ export const DataSourcesView: React.FC = () => {
 
                 {/* File Input */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                     Scientific Data File (.csv, .nc, .tif, .zip)
                   </label>
                   <input
                     type="file"
                     accept=".csv,.nc,.nc4,.tif,.tiff,.zip"
                     onChange={handleFileChange}
-                    className="w-full bg-navy-900 border border-navy-750 text-slate-300 rounded-xl px-3 py-1.5 text-xs file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-cyan-950 file:text-cyan-300 hover:file:bg-cyan-900 cursor-pointer"
+                    className="w-full bg-white border border-slate-300 text-slate-700 rounded-xl px-3 py-1.5 text-xs file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer shadow-sm"
                   />
                 </div>
               </div>
 
               {selectedUploadFile && (
-                <div className="p-3 bg-navy-950/80 rounded-xl border border-navy-800 flex items-center justify-between text-xs">
-                  <div className="flex items-center space-x-2 text-slate-200">
-                    <FileText className="w-4 h-4 text-cyan-400" />
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+                  <div className="flex items-center space-x-2 text-slate-800">
+                    <FileText className="w-4 h-4 text-blue-600" />
                     <span className="font-mono">{selectedUploadFile.name}</span>
-                    <span className="text-slate-400">
+                    <span className="text-slate-500">
                       ({(selectedUploadFile.size / 1024).toFixed(1)} KB)
                     </span>
                   </div>
-                  <span className="text-[10px] text-cyan-400 bg-cyan-950 px-2 py-0.5 rounded border border-cyan-800">
+                  <span className="text-[10px] text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 font-semibold">
                     Ready for Quarantine
                   </span>
                 </div>
               )}
 
               {uploadError && (
-                <div className="p-3 bg-red-950/60 rounded-xl border border-red-800/80 text-xs text-red-200 flex items-center space-x-2">
-                  <XCircle className="w-4 h-4 text-red-400 shrink-0" />
+                <div className="p-3 bg-rose-50 rounded-xl border border-rose-200 text-xs text-rose-800 flex items-center space-x-2">
+                  <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
                   <span>{uploadError}</span>
                 </div>
               )}
@@ -440,10 +438,10 @@ export const DataSourcesView: React.FC = () => {
                 <button
                   type="submit"
                   disabled={!selectedUploadFile || isUploading}
-                  className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl font-bold text-xs text-white transition-all ${
+                  className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl font-bold text-xs text-white transition-all shadow-sm ${
                     !selectedUploadFile || isUploading
-                      ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                      : 'bg-cyan-600 hover:bg-cyan-500 shadow-lg shadow-cyan-900/40 cursor-pointer'
+                      ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
                   }`}
                 >
                   {isUploading ? (
@@ -465,24 +463,24 @@ export const DataSourcesView: React.FC = () => {
           {/* Validation Report Card */}
           {uploadResult && (
             <Card
-              className={`p-5 border-2 ${
+              className={`p-5 border-2 shadow-sm ${
                 uploadResult.validation_report.is_valid
-                  ? 'border-emerald-500/60 bg-emerald-950/10'
-                  : 'border-red-500/60 bg-red-950/10'
+                  ? 'border-emerald-300 bg-emerald-50/30'
+                  : 'border-rose-300 bg-rose-50/30'
               }`}
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-navy-800">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200">
                 <div className="flex items-center space-x-2.5">
                   {uploadResult.validation_report.is_valid ? (
-                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                   ) : (
-                    <XCircle className="w-5 h-5 text-red-400" />
+                    <XCircle className="w-5 h-5 text-rose-600" />
                   )}
                   <div>
-                    <h4 className="font-bold text-white text-sm">
+                    <h4 className="font-bold text-slate-900 text-sm">
                       Validation Report: {uploadResult.filename}
                     </h4>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-[11px] text-slate-500">
                       Upload ID: <span className="font-mono">{uploadResult.upload_id}</span>
                     </p>
                   </div>
@@ -490,17 +488,17 @@ export const DataSourcesView: React.FC = () => {
 
                 <div className="flex flex-wrap items-center gap-2">
                   {uploadResult.processing_stage && (
-                    <span className="text-[10px] px-2 py-0.5 rounded font-mono font-bold uppercase tracking-wider bg-purple-950 text-purple-300 border border-purple-800">
+                    <span className="text-[10px] px-2 py-0.5 rounded font-mono font-bold uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200">
                       {uploadResult.processing_stage}
                     </span>
                   )}
                   <span
                     className={`text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wide border ${
                       uploadResult.status === 'VALIDATED'
-                        ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
                         : uploadResult.status === 'UNSUPPORTED'
-                        ? 'bg-amber-950/80 text-amber-300 border-amber-700'
-                        : 'bg-red-950/80 text-red-300 border-red-700'
+                        ? 'bg-amber-50 text-amber-800 border-amber-300'
+                        : 'bg-rose-50 text-rose-700 border-rose-300'
                     }`}
                   >
                     {uploadResult.status}
@@ -514,69 +512,69 @@ export const DataSourcesView: React.FC = () => {
 
               {/* Statistics Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-xs">
-                <div className="p-3 bg-navy-900 rounded-xl border border-navy-800">
-                  <span className="text-slate-400 block text-[10px] uppercase">Format</span>
-                  <span className="text-white font-bold">{uploadResult.validation_report.file_type}</span>
+                <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+                  <span className="text-slate-500 block text-[10px] uppercase font-medium">Format</span>
+                  <span className="text-slate-900 font-bold">{uploadResult.validation_report.file_type}</span>
                 </div>
-                <div className="p-3 bg-navy-900 rounded-xl border border-navy-800">
-                  <span className="text-slate-400 block text-[10px] uppercase">Total Records</span>
-                  <span className="text-white font-bold">{uploadResult.validation_report.total_records}</span>
+                <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+                  <span className="text-slate-500 block text-[10px] uppercase font-medium">Total Records</span>
+                  <span className="text-slate-900 font-bold">{uploadResult.validation_report.total_records}</span>
                 </div>
-                <div className="p-3 bg-navy-900 rounded-xl border border-navy-800">
-                  <span className="text-slate-400 block text-[10px] uppercase">Valid Records</span>
-                  <span className="text-emerald-300 font-bold">{uploadResult.validation_report.valid_records}</span>
+                <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+                  <span className="text-slate-500 block text-[10px] uppercase font-medium">Valid Records</span>
+                  <span className="text-emerald-700 font-bold">{uploadResult.validation_report.valid_records}</span>
                 </div>
-                <div className="p-3 bg-navy-900 rounded-xl border border-navy-800">
-                  <span className="text-slate-400 block text-[10px] uppercase">Missing / NoData</span>
-                  <span className="text-amber-300 font-bold">{uploadResult.validation_report.missing_records}</span>
+                <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+                  <span className="text-slate-500 block text-[10px] uppercase font-medium">Missing / NoData</span>
+                  <span className="text-amber-800 font-bold">{uploadResult.validation_report.missing_records}</span>
                 </div>
               </div>
 
               {/* Additional Metadata */}
-              <div className="mt-4 p-3 bg-navy-950/60 rounded-xl border border-navy-850 space-y-1.5 text-xs">
+              <div className="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5 text-xs">
                 {uploadResult.validation_report.spatial_coverage_status && (
-                  <div className="flex justify-between text-slate-300">
-                    <span className="text-slate-400">Spatial Validation:</span>
-                    <span className="font-mono text-cyan-300">
+                  <div className="flex justify-between text-slate-700">
+                    <span className="text-slate-500">Spatial Validation:</span>
+                    <span className="font-mono text-blue-700 font-semibold">
                       {uploadResult.validation_report.spatial_coverage_status}
                     </span>
                   </div>
                 )}
                 {uploadResult.validation_report.raster_dimensions && (
-                  <div className="flex justify-between text-slate-300">
-                    <span className="text-slate-400">Raster Dimensions:</span>
-                    <span className="font-mono text-white">
+                  <div className="flex justify-between text-slate-700">
+                    <span className="text-slate-500">Raster Dimensions:</span>
+                    <span className="font-mono text-slate-900 font-semibold">
                       {uploadResult.validation_report.raster_dimensions.width} × {uploadResult.validation_report.raster_dimensions.height} px ({uploadResult.validation_report.raster_dimensions.bands} band)
                     </span>
                   </div>
                 )}
                 {uploadResult.validation_report.bounding_box && (
-                  <div className="flex justify-between text-slate-300">
-                    <span className="text-slate-400">Bounding Box:</span>
-                    <span className="font-mono text-[10px] text-slate-300">
+                  <div className="flex justify-between text-slate-700">
+                    <span className="text-slate-500">Bounding Box:</span>
+                    <span className="font-mono text-[10px] text-slate-600">
                       [{uploadResult.validation_report.bounding_box.min_lng}, {uploadResult.validation_report.bounding_box.min_lat}] to [{uploadResult.validation_report.bounding_box.max_lng}, {uploadResult.validation_report.bounding_box.max_lat}]
                     </span>
                   </div>
                 )}
                 {uploadResult.validation_report.date_range && (
-                  <div className="flex justify-between text-slate-300">
-                    <span className="text-slate-400">Date Range:</span>
-                    <span className="font-mono text-cyan-300">
+                  <div className="flex justify-between text-slate-700">
+                    <span className="text-slate-500">Date Range:</span>
+                    <span className="font-mono text-blue-700 font-semibold">
                       {uploadResult.validation_report.date_range.start} to {uploadResult.validation_report.date_range.end}
                     </span>
                   </div>
                 )}
                 {uploadResult.validation_report.mean_value !== undefined && (
-                  <div className="flex justify-between text-slate-300">
-                    <span className="text-slate-400">Mean Precipitation:</span>
-                    <span className="font-mono text-white">
+                  <div className="flex justify-between text-slate-700">
+                    <span className="text-slate-500">Mean Precipitation:</span>
+                    <span className="font-mono text-slate-900 font-semibold">
                       {uploadResult.validation_report.mean_value} mm/day
                     </span>
                   </div>
                 )}
-                <div className="flex justify-between text-slate-300">
-                  <span className="text-slate-400">SHA-256 Integrity Hash:</span>
-                  <span className="font-mono text-[10px] text-slate-400 truncate max-w-xs">
+                <div className="flex justify-between text-slate-700">
+                  <span className="text-slate-500">SHA-256 Integrity Hash:</span>
+                  <span className="font-mono text-[10px] text-slate-500 truncate max-w-xs">
                     {uploadResult.validation_report.sha256_hash}
                   </span>
                 </div>
@@ -584,8 +582,8 @@ export const DataSourcesView: React.FC = () => {
 
               {/* Warnings List */}
               {uploadResult.validation_report.warnings.length > 0 && (
-                <div className="mt-3 p-3 bg-amber-950/40 rounded-xl border border-amber-800/60 text-xs text-amber-200 space-y-1">
-                  <div className="font-bold flex items-center space-x-1.5 text-amber-300">
+                <div className="mt-3 p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 space-y-1">
+                  <div className="font-bold flex items-center space-x-1.5 text-amber-800">
                     <AlertCircle className="w-3.5 h-3.5" />
                     <span>Scientific Warnings ({uploadResult.validation_report.warnings.length})</span>
                   </div>
@@ -599,8 +597,8 @@ export const DataSourcesView: React.FC = () => {
 
               {/* Errors List */}
               {uploadResult.validation_report.errors.length > 0 && (
-                <div className="mt-3 p-3 bg-red-950/40 rounded-xl border border-red-800/60 text-xs text-red-200 space-y-1">
-                  <div className="font-bold flex items-center space-x-1.5 text-red-300">
+                <div className="mt-3 p-3 bg-rose-50 rounded-xl border border-rose-200 text-xs text-rose-800 space-y-1">
+                  <div className="font-bold flex items-center space-x-1.5 text-rose-700">
                     <XCircle className="w-3.5 h-3.5" />
                     <span>Integrity Errors ({uploadResult.validation_report.errors.length})</span>
                   </div>
@@ -615,23 +613,23 @@ export const DataSourcesView: React.FC = () => {
           )}
 
           {/* Upload History Table */}
-          <Card className="p-5">
-            <div className="flex items-center justify-between pb-3 border-b border-navy-800">
-              <h3 className="text-sm font-bold text-white flex items-center space-x-2">
-                <Database className="w-4 h-4 text-cyan-400" />
+          <Card className="p-5 shadow-sm">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
+                <Database className="w-4 h-4 text-blue-600" />
                 <span>Upload Registry & Quarantine History</span>
               </h3>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={handleTriggerCleanup}
-                  className="text-xs text-amber-400 hover:text-amber-300 px-2 py-1 rounded bg-amber-950/60 border border-amber-800/80 cursor-pointer"
+                  className="text-xs text-amber-800 hover:text-amber-900 px-2 py-1 rounded bg-amber-50 border border-amber-200 font-semibold cursor-pointer"
                 >
                   Purge Expired Quarantine (24h)
                 </button>
                 <button
                   onClick={loadHistory}
                   disabled={isLoadingHistory}
-                  className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center space-x-1 cursor-pointer"
+                  className="text-xs text-blue-700 hover:text-blue-800 font-semibold flex items-center space-x-1 cursor-pointer"
                 >
                   <RefreshCw className={`w-3 h-3 ${isLoadingHistory ? 'animate-spin' : ''}`} />
                   <span>Refresh</span>
@@ -640,19 +638,19 @@ export const DataSourcesView: React.FC = () => {
             </div>
 
             {cleanupMessage && (
-              <div className="mt-2.5 p-2 bg-navy-950 rounded-lg border border-cyan-800/60 text-xs text-cyan-300 font-mono">
+              <div className="mt-2.5 p-2 bg-slate-50 rounded-lg border border-slate-200 text-xs text-blue-700 font-mono font-medium">
                 {cleanupMessage}
               </div>
             )}
 
             {uploadHistory.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-400">
+              <div className="py-8 text-center text-xs text-slate-500">
                 No scientific datasets have been uploaded yet. Uploaded datasets will be logged here with SHA-256 integrity hashes.
               </div>
             ) : (
               <div className="mt-3 overflow-x-auto">
-                <table className="w-full text-left text-xs text-slate-300">
-                  <thead className="text-[10px] text-slate-400 uppercase bg-navy-950 border-b border-navy-800">
+                <table className="w-full text-left text-xs text-slate-700">
+                  <thead className="text-[10px] text-slate-500 uppercase bg-slate-50 border-b border-slate-200 font-semibold">
                     <tr>
                       <th className="py-2.5 px-3 font-semibold">Filename</th>
                       <th className="py-2.5 px-3 font-semibold">Format</th>
@@ -664,22 +662,22 @@ export const DataSourcesView: React.FC = () => {
                       <th className="py-2.5 px-3 font-semibold">Uploaded</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-navy-800/60 font-mono">
+                  <tbody className="divide-y divide-slate-100 font-mono">
                     {uploadHistory.map((item) => (
-                      <tr key={item.upload_id} className="hover:bg-navy-900/40">
-                        <td className="py-2.5 px-3 text-white font-sans">{item.filename}</td>
-                        <td className="py-2.5 px-3 text-cyan-300">{item.file_type}</td>
-                        <td className="py-2.5 px-3 text-slate-400 font-sans">
+                      <tr key={item.upload_id} className="hover:bg-slate-50">
+                        <td className="py-2.5 px-3 text-slate-900 font-sans font-medium">{item.filename}</td>
+                        <td className="py-2.5 px-3 text-blue-700 font-semibold">{item.file_type}</td>
+                        <td className="py-2.5 px-3 text-slate-600 font-sans">
                           {item.target_region_id || 'All / Auto'}
                         </td>
-                        <td className="py-2.5 px-3 text-slate-200">{item.records_count}</td>
-                        <td className="py-2.5 px-3 text-cyan-400">
+                        <td className="py-2.5 px-3 text-slate-800">{item.records_count}</td>
+                        <td className="py-2.5 px-3 text-blue-700 font-semibold">
                           {item.spatial_overlap_pct !== undefined && item.spatial_overlap_pct !== null
                             ? `${item.spatial_overlap_pct}%`
                             : '—'}
                         </td>
                         <td className="py-2.5 px-3">
-                          <span className="text-[10px] text-purple-300 bg-purple-950/60 px-1.5 py-0.5 rounded border border-purple-800/80">
+                          <span className="text-[10px] text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 font-semibold">
                             {item.processing_stage || 'VALIDATED'}
                           </span>
                         </td>
@@ -687,16 +685,16 @@ export const DataSourcesView: React.FC = () => {
                           <span
                             className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                               item.status === 'VALIDATED'
-                                ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-300'
                                 : item.status === 'UNSUPPORTED'
-                                ? 'bg-amber-950 text-amber-300 border border-amber-800'
-                                : 'bg-red-950 text-red-300 border border-red-800'
+                                ? 'bg-amber-50 text-amber-800 border border-amber-300'
+                                : 'bg-rose-50 text-rose-700 border border-rose-300'
                             }`}
                           >
                             {item.status}
                           </span>
                         </td>
-                        <td className="py-2.5 px-3 text-slate-400 text-[10px]">
+                        <td className="py-2.5 px-3 text-slate-500 text-[10px]">
                           {item.uploaded_at.split('T')[0]}
                         </td>
                       </tr>
@@ -712,16 +710,16 @@ export const DataSourcesView: React.FC = () => {
       {/* Tab 3: Processing Pipeline & Mathematical Methodology */}
       {activeTab === 'methodology' && (
         <div className="space-y-4">
-          <Card>
-            <h3 className="text-sm font-bold text-white pb-3 border-b border-navy-800 flex items-center space-x-2">
-              <BookOpen className="w-4 h-4 text-cyan-400" />
+          <Card className="shadow-sm">
+            <h3 className="text-sm font-bold text-slate-900 pb-3 border-b border-slate-100 flex items-center space-x-2">
+              <BookOpen className="w-4 h-4 text-blue-600" />
               <span>Scientific Methodology & Algorithmic Specifications</span>
             </h3>
 
-            <div className="mt-4 space-y-4 text-xs text-slate-300 leading-relaxed">
+            <div className="mt-4 space-y-4 text-xs text-slate-700 leading-relaxed">
               {/* Section 1 */}
-              <div className="p-4 rounded-xl bg-navy-900 border border-navy-800">
-                <h4 className="font-bold text-cyan-300 text-sm mb-1">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <h4 className="font-bold text-blue-700 text-sm mb-1">
                   1. Data Pipeline Ingestion
                 </h4>
                 <p>
@@ -733,14 +731,14 @@ export const DataSourcesView: React.FC = () => {
               </div>
 
               {/* Section 2 */}
-              <div className="p-4 rounded-xl bg-navy-900 border border-navy-800">
-                <h4 className="font-bold text-cyan-300 text-sm mb-1">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <h4 className="font-bold text-blue-700 text-sm mb-1">
                   2. Validation, Duplicate Handling, Units & Staleness Tracking
                 </h4>
                 <p>
                   Every inbound record undergoes strict validation via <code>DataValidator</code>:
                 </p>
-                <ul className="list-disc list-inside mt-1.5 space-y-1 text-slate-400">
+                <ul className="list-disc list-inside mt-1.5 space-y-1 text-slate-600">
                   <li><strong>Duplicate Pruning:</strong> Duplicate observation dates are identified and pruned, retaining the latest record.</li>
                   <li><strong>Unit Standardization:</strong> All precipitation values are normalized to millimeters (<code>mm</code>). Negative values are flagged as invalid.</li>
                   <li><strong>Missing-Data Accounting:</strong> Missing observations are explicitly tracked as <code>is_missing: true</code> and are NEVER silently replaced with 0.0 mm.</li>
@@ -749,49 +747,49 @@ export const DataSourcesView: React.FC = () => {
               </div>
 
               {/* Section 3 */}
-              <div className="p-4 rounded-xl bg-navy-900 border border-navy-800">
-                <h4 className="font-bold text-cyan-300 text-sm mb-1">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <h4 className="font-bold text-blue-700 text-sm mb-1">
                   3. Rainfall Accumulation & Percentage Anomaly Formulation
                 </h4>
                 <p>
                   Rolling accumulation over windows N (7, 30, or 90 days) is calculated by:
                 </p>
-                <div className="my-2 p-2.5 rounded bg-navy-950 font-mono text-[11px] text-cyan-200">
+                <div className="my-2 p-2.5 rounded bg-white border border-slate-200 font-mono text-[11px] text-blue-800">
                   Accumulation_N = Sum(P_t, for t = 0 to N-1)
                 </div>
                 <p>
                   Rainfall departure (% anomaly) is evaluated against the 30-year climatological baseline mean for that period:
                 </p>
-                <div className="my-2 p-2.5 rounded bg-navy-950 font-mono text-[11px] text-cyan-200">
+                <div className="my-2 p-2.5 rounded bg-white border border-slate-200 font-mono text-[11px] text-blue-800">
                   Anomaly (%) = ((Observed_Accumulation - Baseline_Mean) / Baseline_Mean) * 100
                 </div>
               </div>
 
               {/* Section 4 */}
-              <div className="p-4 rounded-xl bg-navy-900 border border-navy-800">
-                <h4 className="font-bold text-amber-300 text-sm mb-1">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <h4 className="font-bold text-amber-800 text-sm mb-1">
                   4. Standardized Precipitation Index (SPI-3) Mathematical Derivation
                 </h4>
                 <p>
                   The SPI-3 index quantifies 3-month meteorological precipitation deficit or surplus:
                 </p>
-                <ul className="list-disc list-inside mt-1.5 space-y-1 text-slate-400">
+                <ul className="list-disc list-inside mt-1.5 space-y-1 text-slate-600">
                   <li>3-month rolling precipitation totals are fitted to a 2-parameter Gamma distribution via Maximum Likelihood Estimation (MLE) using <code>scipy.stats.gamma.fit(floc=0)</code>.</li>
                   <li>Cumulative probability H(x) is adjusted for the probability of zero-precipitation periods q: H(x) = q + (1 - q) * G(x).</li>
                   <li>H(x) is transformed to standard normal quantiles Z via inverse standard normal CDF.</li>
                   <li><strong>Limitations:</strong> SPI-3 is strictly a meteorological drought indicator. It does NOT directly measure soil moisture or groundwater levels.</li>
                 </ul>
-                <div className="my-2 p-2.5 rounded bg-navy-950 font-mono text-[11px] text-amber-200">
+                <div className="my-2 p-2.5 rounded bg-white border border-slate-200 font-mono text-[11px] text-amber-800 font-semibold">
                   SPI Classification: Normal (&gt; -1.0) | Moderately Dry (-1.0 to -1.49) | Severely Dry (-1.5 to -1.99) | Extremely Dry (&lt; -2.0)
                 </div>
               </div>
 
               {/* Section 5 */}
-              <div className="p-4 rounded-xl bg-navy-900 border border-navy-800">
-                <h4 className="font-bold text-rose-300 text-sm mb-1">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <h4 className="font-bold text-rose-700 text-sm mb-1">
                   5. Indicator Boundaries: What Indicators Do & Do Not Measure
                 </h4>
-                <ul className="list-disc list-inside space-y-1 text-slate-400">
+                <ul className="list-disc list-inside space-y-1 text-slate-600">
                   <li><strong>What Flood Indicators Measure:</strong> High meteorological water loading, cumulative 7d/30d precipitation, and regional terrain slope susceptibility.</li>
                   <li><strong>What Flood Indicators DO NOT Measure:</strong> Actual Rapti/Rohini river stage heights, upstream dam releases from Nepal, embankment breaches, or street-level storm drain choke points.</li>
                   <li><strong>What Drought Indicators Measure:</strong> 90-day rainfall departures, Kharif seasonal deficits, and consecutive dry spell duration.</li>
@@ -800,8 +798,8 @@ export const DataSourcesView: React.FC = () => {
               </div>
 
               {/* Section 6 */}
-              <div className="p-4 rounded-xl bg-navy-900 border border-navy-800">
-                <h4 className="font-bold text-emerald-300 text-sm mb-1">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <h4 className="font-bold text-emerald-800 text-sm mb-1">
                   6. Legal & Operational Authority
                 </h4>
                 <p>
@@ -816,7 +814,7 @@ export const DataSourcesView: React.FC = () => {
         </div>
       )}
 
-      {/* Tab 3: Indicator Definitions */}
+      {/* Tab 4: Indicator Definitions */}
       {activeTab === 'indicators' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[
@@ -845,15 +843,15 @@ export const DataSourcesView: React.FC = () => {
               category: 'Statistical Historical Context',
             },
           ].map((ind, i) => (
-            <Card key={i} className="p-4">
+            <Card key={i} className="p-4 shadow-sm">
               <div className="flex items-center justify-between">
-                <h4 className="font-bold text-white text-sm">{ind.name}</h4>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-navy-850 text-cyan-300 font-mono">
+                <h4 className="font-bold text-slate-900 text-sm">{ind.name}</h4>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-mono font-semibold">
                   {ind.category}
                 </span>
               </div>
-              <p className="text-xs text-slate-300 mt-2 leading-relaxed">{ind.def}</p>
-              <div className="mt-3 p-2.5 rounded bg-navy-950 font-mono text-[11px] text-cyan-300">
+              <p className="text-xs text-slate-600 mt-2 leading-relaxed">{ind.def}</p>
+              <div className="mt-3 p-2.5 rounded bg-slate-50 border border-slate-200 font-mono text-[11px] text-blue-700 font-medium">
                 {ind.formula}
               </div>
             </Card>
@@ -861,35 +859,35 @@ export const DataSourcesView: React.FC = () => {
         </div>
       )}
 
-      {/* Tab 4: Limitations */}
+      {/* Tab 5: Limitations */}
       {activeTab === 'limitations' && (
-        <Card className="p-5 border-amber-500/30">
-          <div className="flex items-center space-x-2.5 pb-3 border-b border-navy-800 text-amber-300 font-bold text-base">
-            <AlertTriangle className="w-5 h-5 text-amber-400" />
+        <Card className="p-5 border-amber-300 shadow-sm">
+          <div className="flex items-center space-x-2.5 pb-3 border-b border-slate-100 text-amber-800 font-bold text-base">
+            <AlertTriangle className="w-5 h-5 text-amber-600" />
             <span>Operational & Scientific Disclosures</span>
           </div>
 
-          <div className="mt-4 space-y-3 text-xs text-slate-300 leading-relaxed">
-            <div className="p-3.5 rounded-xl bg-navy-900 border border-navy-800">
-              <span className="font-bold text-white block mb-0.5">Decision-Support Prototype:</span>
+          <div className="mt-4 space-y-3 text-xs text-slate-700 leading-relaxed">
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+              <span className="font-bold text-slate-900 block mb-0.5">Decision-Support Prototype:</span>
               JalRakshak is a research decision-support prototype. It does not replace the India Meteorological
               Department (IMD), Central Water Commission (CWC), or Uttar Pradesh State Disaster Management Authority (UPSDMA).
             </div>
 
-            <div className="p-3.5 rounded-xl bg-navy-900 border border-navy-800">
-              <span className="font-bold text-white block mb-0.5">Spatial Resolution Limits:</span>
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+              <span className="font-bold text-slate-900 block mb-0.5">Spatial Resolution Limits:</span>
               Satellite gridded precipitation operates at ~5–10 km resolution. Local localized cloudbursts or micro-drainage
               blockages may not be captured at street level.
             </div>
 
-            <div className="p-3.5 rounded-xl bg-navy-900 border border-navy-800">
-              <span className="font-bold text-white block mb-0.5">Hydrological Inundation vs Rainfall:</span>
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+              <span className="font-bold text-slate-900 block mb-0.5">Hydrological Inundation vs Rainfall:</span>
               Rainfall observations alone do not determine flood inundation or river gauge danger levels. River embankment
               breaches depend on upstream discharge from Nepal and Rapti gauge crests.
             </div>
 
-            <div className="p-3.5 rounded-xl bg-navy-900 border border-navy-800">
-              <span className="font-bold text-white block mb-0.5">No Calibrated Probability Misrepresentation:</span>
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+              <span className="font-bold text-slate-900 block mb-0.5">No Calibrated Probability Misrepresentation:</span>
               Numerical scores represent derived risk indicator thresholds. They are not claimed to be calibrated Bayesian
               forecast probabilities without longitudinal empirical validation.
             </div>

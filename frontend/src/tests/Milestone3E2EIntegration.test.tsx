@@ -165,4 +165,40 @@ describe('Milestone 3 — End-to-End Integration & Multi-District Verification',
       screen.getByText(/candidate districts never inherit or interpolate observations from Gorakhpur or Mahoba/i)
     ).toBeInTheDocument();
   });
+
+  it('verifies district selection consistency and zero data bleed in Flood and Drought Assessment views', async () => {
+    render(<App />);
+
+    // 1. Initially on Gorakhpur, navigate to Flood Assessment
+    fireEvent.click(screen.getAllByText(/Flood Assessment/i)[0]);
+    expect(screen.getByRole('heading', { level: 1, name: /Gorakhpur — Flood Assessment/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/286/i).length).toBeGreaterThan(0); // Calibrated 7d rainfall
+    expect(screen.getAllByText(/512/i).length).toBeGreaterThan(0); // Calibrated 30d rainfall
+
+    // 2. Select Patna candidate district via Region Selector
+    const selectorBtn = screen.getByRole('button', { name: /UP :/i });
+    fireEvent.click(selectorBtn);
+    const biharTab = screen.getByRole('button', { name: /Bihar \(38\)/i });
+    fireEvent.click(biharTab);
+    await waitFor(() => {
+      expect(screen.getAllByRole('button', { name: /Patna/i }).length).toBeGreaterThan(0);
+    });
+    fireEvent.click(screen.getAllByRole('button', { name: /Patna/i })[0]);
+
+    // 3. Verify Flood Assessment dynamically updates heading to Patna and zero data bleed
+    expect(screen.getByRole('heading', { level: 1, name: /Patna — Flood Assessment/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/MODEL OFFLINE/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/No Historical Hydrological Telemetry Ingested for Patna/i)).toBeInTheDocument();
+
+    // 4. Switch to Drought Assessment while Patna is selected
+    fireEvent.click(screen.getAllByText(/Drought Assessment/i)[0]);
+    expect(screen.getByRole('heading', { level: 1, name: /Patna — Drought Assessment/i })).toBeInTheDocument();
+    expect(screen.getByText(/No Meteorological Drought Telemetry Ingested for Patna/i)).toBeInTheDocument();
+
+    // 5. Switch location back to Mahoba drought pilot
+    const mahobaSwitchBtn = screen.getByRole('button', { name: /View Mahoba Calibrated Pilot/i });
+    fireEvent.click(mahobaSwitchBtn);
+    expect(screen.getByRole('heading', { level: 1, name: /Mahoba — Drought Assessment/i })).toBeInTheDocument();
+    expect(screen.getByText(/Precipitation Series — Mahoba/i)).toBeInTheDocument();
+  });
 });

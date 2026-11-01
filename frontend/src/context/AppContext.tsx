@@ -71,8 +71,15 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentRoute, setCurrentRoute] = useState<NavigationRoute>('dashboard');
-  const [selectedLocation, setSelectedLocation] = useState<PilotLocationId>('gorakhpur');
+  const [selectedLocation, setSelectedLocationState] = useState<PilotLocationId>('gorakhpur');
   const [selectedState, setSelectedState] = useState<'state-uttar-pradesh' | 'state-bihar'>('state-uttar-pradesh');
+
+  const setSelectedLocation = (id: PilotLocationId) => {
+    setSelectedLocationState(id);
+    if (id === 'gorakhpur' || id === 'mahoba' || id === 'all') {
+      setSelectedState('state-uttar-pradesh');
+    }
+  };
   const [availableDistricts, setAvailableDistricts] = useState<RegionSummary[]>([]);
   const [isLoadingDistricts, setIsLoadingDistricts] = useState<boolean>(false);
   const [districtsError, setDistrictsError] = useState<string | null>(null);

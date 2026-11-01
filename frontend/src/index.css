@@ -4,40 +4,40 @@
 
 @layer base {
   body {
-    @apply bg-navy-950 text-slate-100 font-sans;
-    background: radial-gradient(circle at 50% 0%, #0d2a3d 0%, #06141e 55%, #030a10 100%);
+    @apply bg-slate-50 text-slate-800 font-sans antialiased;
+    background-color: #f8fafc;
     min-height: 100vh;
   }
 }
 
-/* Glassmorphic Elevated Card */
+/* Enterprise Clean Card Styles */
 .glass-panel {
-  background: linear-gradient(135deg, rgba(14, 38, 56, 0.75) 0%, rgba(8, 24, 36, 0.85) 100%);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(56, 120, 165, 0.25);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
 }
 
 .glass-panel-flood {
-  background: linear-gradient(135deg, rgba(14, 45, 70, 0.75) 0%, rgba(8, 28, 45, 0.88) 100%);
-  border: 1px solid rgba(0, 229, 255, 0.28);
-  box-shadow: 0 10px 30px -10px rgba(0, 145, 234, 0.3), inset 0 1px 0 rgba(0, 229, 255, 0.15);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-left: 3.5px solid #0284c7;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
 }
 
 .glass-panel-drought {
-  background: linear-gradient(135deg, rgba(45, 28, 12, 0.75) 0%, rgba(28, 16, 7, 0.88) 100%);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  box-shadow: 0 10px 30px -10px rgba(234, 88, 12, 0.25), inset 0 1px 0 rgba(251, 191, 36, 0.15);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-left: 3.5px solid #d97706;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
 }
 
-/* Interactive icon style with 3D micro-lift and glow */
+/* Interactive styles */
 .interactive-btn {
-  @apply transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-navy-950 active:scale-95;
+  @apply transition-all duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 active:scale-[0.98];
 }
 
 .interactive-btn:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 /* Custom scrollbars */
@@ -46,28 +46,28 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(7, 21, 32, 0.6);
+  background: #f1f5f9;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(56, 120, 165, 0.4);
+  background: #cbd5e1;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 229, 255, 0.6);
+  background: #94a3b8;
 }
 
-/* Leaflet dark map tweaks */
+/* Leaflet clean light map tweaks */
 .leaflet-container {
-  background-color: #071520 !important;
+  background-color: #f8fafc !important;
   font-family: inherit;
 }
 .leaflet-popup-content-wrapper {
-  background: #0a1d2c !important;
-  color: #f1f5f9 !important;
-  border: 1px solid rgba(0, 229, 255, 0.3) !important;
-  border-radius: 12px !important;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5) !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
 }
 .leaflet-popup-tip {
-  background: #0a1d2c !important;
+  background: #ffffff !important;
 }

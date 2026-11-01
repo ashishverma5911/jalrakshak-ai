@@ -1,18 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
-  BarChart3,
-  Calendar,
   Download,
-  Filter,
-  TrendingUp,
-  CloudRain,
-  ChevronDown,
-  Info,
-  CheckCircle2,
   FileSpreadsheet,
-  RefreshCw,
   Table,
-  AlertTriangle,
   Database,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -23,7 +13,6 @@ import { DataProvenanceBadge } from '../components/common/DataProvenanceBadge';
 import {
   UP_DISTRICTS_DATA,
   getFilteredRainfallData,
-  DEMO_DATA_DISCLAIMER,
 } from '../data/mockData';
 
 export const RainfallTrendsView: React.FC = () => {
@@ -32,8 +21,8 @@ export const RainfallTrendsView: React.FC = () => {
   const [timePeriod, setTimePeriod] = useState<'1y' | '5y' | '10y'>('1y');
   const [aggregation, setAggregation] = useState<'monthly' | 'weekly' | 'daily'>('monthly');
   const [backendTrends, setBackendTrends] = useState<RainfallTrendsResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [, setIsLoading] = useState(false);
+  const [, setFetchError] = useState<string | null>(null);
   const [showDataTable, setShowDataTable] = useState(false);
 
   const locKey = selectedLocation === 'mahoba' ? 'mahoba' : 'gorakhpur';
@@ -112,9 +101,9 @@ export const RainfallTrendsView: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Demo Disclaimer & Non-Forecast Notice */}
-      <div className="px-3.5 py-2 rounded-xl bg-navy-900/80 border border-navy-800 text-xs text-slate-300 flex flex-col md:flex-row md:items-center justify-between gap-2">
+      <div className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-2 shadow-sm">
         <div className="flex items-center space-x-2">
-          <span className="w-2 h-2 rounded-full bg-cyan-400" />
+          <span className="w-2 h-2 rounded-full bg-blue-600" />
           <span>
             <strong>SCIENTIFIC NOTICE:</strong> Historical observational trends only (1991–2024 reference climatology). Does NOT provide or imply a future weather prediction or river stage forecast.
           </span>
@@ -127,40 +116,40 @@ export const RainfallTrendsView: React.FC = () => {
             spatialResolution="0.05° (~5.3 km)"
             compact
           />
-          <span className="text-cyan-400 uppercase">{locKey}</span>
+          <span className="text-blue-700 uppercase font-semibold">{locKey}</span>
         </div>
       </div>
 
       {/* Candidate District Isolation & Pending Telemetry Banner */}
       {!isConfiguredPilot && (
-        <div className="p-4 rounded-2xl bg-navy-900/90 border border-cyan-500/30 shadow-lg space-y-2">
+        <div className="p-4 rounded-2xl bg-white border border-blue-200 shadow-sm space-y-2">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-300 shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shrink-0">
               <Database className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white flex items-center space-x-2">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
                 <span>{activeLocationData.name}</span>
-                <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                   Candidate District • Ingestion Pending
                 </span>
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500">
                 Observational precipitation extraction queued. Climatological baselines uncalibrated.
               </p>
             </div>
           </div>
-          <div className="p-2.5 rounded-xl bg-navy-950/80 border border-navy-800 text-xs text-slate-300 leading-relaxed">
+          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 leading-relaxed">
             <strong>Scientific Boundary:</strong> Daily precipitation series have not yet been ingested into the partitioned database for {activeLocationData.name}. In accordance with scientific integrity rules, candidate districts never inherit or interpolate observations from Gorakhpur or Mahoba.
           </div>
         </div>
       )}
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-navy-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-extrabold text-white">Rainfall & Historical Trends</h1>
-          <p className="text-xs lg:text-sm text-slate-300">
+          <h1 className="text-2xl lg:text-3xl font-extrabold text-slate-900">Rainfall & Historical Trends</h1>
+          <p className="text-xs lg:text-sm text-slate-600">
             Analyse multi-year rainfall patterns, precipitation anomalies and compare with 30-year historical baselines.
           </p>
         </div>
@@ -169,7 +158,7 @@ export const RainfallTrendsView: React.FC = () => {
           <select
             value={selectedLocation}
             onChange={(e) => setSelectedLocation(e.target.value as any)}
-            className="bg-navy-850 border border-cyan-500/40 text-xs font-semibold text-cyan-200 rounded-xl px-3 py-2 focus:outline-none focus:border-cyan-400"
+            className="bg-white border border-slate-200 text-xs font-semibold text-slate-800 rounded-xl px-3 py-2 shadow-sm focus:outline-none focus:border-blue-500"
           >
             <option value="gorakhpur">Gorakhpur (Flood Pilot)</option>
             <option value="mahoba">Mahoba (Drought Pilot)</option>
@@ -181,7 +170,7 @@ export const RainfallTrendsView: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-navy-800 text-sm">
+      <div className="flex border-b border-slate-200 text-sm">
         {[
           { key: 'trend', label: 'Rainfall Trend' },
           { key: 'historical', label: 'Historical Comparison' },
@@ -191,10 +180,10 @@ export const RainfallTrendsView: React.FC = () => {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key as any)}
-            className={`px-4 py-2.5 font-medium border-b-2 transition-all ${
+            className={`px-4 py-2.5 font-semibold border-b-2 transition-all ${
               activeTab === tab.key
-                ? 'border-cyan-400 text-cyan-300 bg-cyan-950/30'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                ? 'border-blue-600 text-blue-700 bg-blue-50/60'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
             {tab.label}
@@ -203,17 +192,17 @@ export const RainfallTrendsView: React.FC = () => {
       </div>
 
       {/* Filter Row */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-3 rounded-2xl bg-navy-900/80 border border-navy-800">
+      <div className="flex flex-wrap items-center justify-between gap-4 p-3 rounded-2xl bg-white border border-slate-200 shadow-sm">
         <div className="flex flex-wrap items-center gap-4 text-xs">
           <div className="flex items-center space-x-2">
-            <span className="text-slate-400">Time Period:</span>
-            <div className="flex bg-navy-850 p-1 rounded-lg border border-navy-700">
+            <span className="text-slate-600 font-medium">Time Period:</span>
+            <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
               {(['1y', '5y', '10y'] as const).map((p) => (
                 <button
                   key={p}
                   onClick={() => setTimePeriod(p)}
                   className={`px-2.5 py-1 rounded text-xs font-semibold ${
-                    timePeriod === p ? 'bg-cyan-500 text-navy-950 font-bold' : 'text-slate-400 hover:text-white'
+                    timePeriod === p ? 'bg-cyan-500 text-slate-900 font-bold shadow-sm' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   {p === '1y' ? '1 Year' : p === '5y' ? '5 Years' : '10 Years'}
@@ -223,14 +212,14 @@ export const RainfallTrendsView: React.FC = () => {
           </div>
 
           <div className="flex items-center space-x-2">
-            <span className="text-slate-400">Aggregation:</span>
-            <div className="flex bg-navy-850 p-1 rounded-lg border border-navy-700">
+            <span className="text-slate-600 font-medium">Aggregation:</span>
+            <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
               {(['monthly', 'weekly', 'daily'] as const).map((agg) => (
                 <button
                   key={agg}
                   onClick={() => setAggregation(agg)}
                   className={`px-2.5 py-1 rounded text-xs font-semibold capitalize ${
-                    aggregation === agg ? 'bg-cyan-500 text-navy-950 font-bold' : 'text-slate-400 hover:text-white'
+                    aggregation === agg ? 'bg-cyan-500 text-slate-900 font-bold shadow-sm' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   {agg}
@@ -243,21 +232,21 @@ export const RainfallTrendsView: React.FC = () => {
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setShowDataTable(!showDataTable)}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-navy-850 hover:bg-navy-800 text-slate-300 text-xs font-semibold border border-navy-700"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-300"
           >
             <Table className="w-3.5 h-3.5" />
             <span>{showDataTable ? 'Hide Table' : 'Accessible Table'}</span>
           </button>
           <button
             onClick={() => handleExport('json')}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-navy-800 hover:bg-navy-700 text-cyan-300 text-xs font-semibold border border-cyan-500/30 interactive-btn"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 interactive-btn"
           >
             <Download className="w-3.5 h-3.5" />
             <span>JSON</span>
           </button>
           <button
             onClick={() => handleExport('csv')}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-navy-800 hover:bg-navy-700 text-cyan-300 text-xs font-semibold border border-cyan-500/30 interactive-btn"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 interactive-btn"
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
             <span>CSV</span>
@@ -267,45 +256,45 @@ export const RainfallTrendsView: React.FC = () => {
 
       {/* Main Chart Card */}
       <Card>
-        <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-navy-800">
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
           <div>
-            <h3 className="text-base font-bold text-white">
+            <h3 className="text-base font-bold text-slate-900">
               {aggregation === 'monthly' ? 'Monthly' : aggregation === 'weekly' ? 'Weekly' : 'Daily'} Rainfall — {districtData.name}
             </h3>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500">
               Current Year vs Historical Climatological Average (1991–2020 baseline)
             </p>
           </div>
           <div className="flex items-center space-x-3 text-xs font-mono">
-            <span className="text-slate-400">Coverage: 100%</span>
-            <span className="text-cyan-300">CHIRPS v2.0 + GPM</span>
+            <span className="text-slate-500">Coverage: 100%</span>
+            <span className="text-blue-700 font-semibold">CHIRPS v2.0 + GPM</span>
           </div>
         </div>
 
         <div className="mt-4">
           {!isConfiguredPilot ? (
             <div className="py-12 px-4 text-center space-y-3">
-              <div className="w-12 h-12 mx-auto rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center">
+              <div className="w-12 h-12 mx-auto rounded-xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center">
                 <Database className="w-6 h-6" />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-white">
+                <h4 className="text-sm font-bold text-slate-900">
                   No Historical Precipitation Telemetry Ingested for {activeLocationData.name}
                 </h4>
-                <p className="text-xs text-slate-400 max-w-lg mx-auto mt-1 leading-relaxed">
+                <p className="text-xs text-slate-500 max-w-lg mx-auto mt-1 leading-relaxed">
                   Administrative region {activeLocationData.region} is registered in the EPSG:4326 spatial hierarchy. Daily precipitation observations will appear here once the ingestion pipeline has been executed.
                 </p>
               </div>
               <div className="flex items-center justify-center gap-2 pt-2">
                 <button
                   onClick={() => setSelectedLocation('gorakhpur')}
-                  className="px-3 py-1.5 rounded-xl bg-sky-500/20 text-sky-300 hover:bg-sky-500/30 border border-sky-500/40 text-xs font-semibold transition"
+                  className="px-3 py-1.5 rounded-xl bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 text-xs font-semibold transition"
                 >
                   View Gorakhpur Flood Series
                 </button>
                 <button
                   onClick={() => setSelectedLocation('mahoba')}
-                  className="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 text-xs font-semibold transition"
+                  className="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200 text-xs font-semibold transition"
                 >
                   View Mahoba Drought Series
                 </button>
@@ -314,26 +303,26 @@ export const RainfallTrendsView: React.FC = () => {
           ) : (
             <RainfallChart
               data={chartSeries}
-              barColor={locKey === 'gorakhpur' ? '#00e5ff' : '#f59e0b'}
-              lineColor={locKey === 'gorakhpur' ? '#38bdf8' : '#ea580c'}
+              barColor={locKey === 'gorakhpur' ? '#0284c7' : '#d97706'}
+              lineColor={locKey === 'gorakhpur' ? '#2563eb' : '#ea580c'}
               height={260}
             />
           )}
         </div>
 
         {/* Missing vs Zero Data Distinction Footer */}
-        <div className="mt-3 pt-2.5 border-t border-navy-800/80 flex flex-wrap items-center justify-between text-[11px] text-slate-400">
+        <div className="mt-3 pt-2.5 border-t border-slate-100 flex flex-wrap items-center justify-between text-[11px] text-slate-500">
           <div className="flex items-center space-x-4">
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-cyan-400" />
+              <span className="w-2 h-2 rounded-full bg-blue-600" />
               <span>Bars: Observed / Fixture Rainfall (mm)</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-3 h-0.5 bg-sky-400" />
+              <span className="w-3 h-0.5 bg-blue-500" />
               <span>Dashed Line: Historical Normal Baseline</span>
             </span>
           </div>
-          <span className="text-slate-400 italic">
+          <span className="text-slate-500 italic">
             Zero rainfall (0.0mm dry day) distinguished from missing observation telemetry.
           </span>
         </div>
@@ -342,15 +331,15 @@ export const RainfallTrendsView: React.FC = () => {
       {/* Screen-Reader Accessible Summary Table (conditionally toggleable) */}
       {showDataTable && (
         <Card className="p-4 overflow-x-auto">
-          <div className="pb-2 border-b border-navy-800 mb-3 flex items-center justify-between">
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+          <div className="pb-2 border-b border-slate-200 mb-3 flex items-center justify-between">
+            <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
               Accessible Data Summary ({chartSeries.length} intervals)
             </h4>
-            <span className="text-xs text-slate-400 font-mono">Units: mm precipitation</span>
+            <span className="text-xs text-slate-500 font-mono">Units: mm precipitation</span>
           </div>
-          <table className="w-full text-left text-xs text-slate-300">
+          <table className="w-full text-left text-xs text-slate-700">
             <thead>
-              <tr className="border-b border-navy-800 text-slate-400 font-mono text-[11px]">
+              <tr className="border-b border-slate-200 text-slate-500 font-mono text-[11px] bg-slate-50">
                 <th className="py-2 px-3">Interval / Date</th>
                 <th className="py-2 px-3">Observed (mm)</th>
                 <th className="py-2 px-3">Baseline Normal (mm)</th>
@@ -364,22 +353,22 @@ export const RainfallTrendsView: React.FC = () => {
                 const isMissing = row.rainfall === null;
                 const isZero = row.rainfall === 0;
                 return (
-                  <tr key={idx} className="border-b border-navy-800/40 hover:bg-navy-850/50">
+                  <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50">
                     <td className="py-1.5 px-3 font-mono">{row.date}</td>
-                    <td className="py-1.5 px-3 font-bold text-white">
+                    <td className="py-1.5 px-3 font-bold text-slate-900">
                       {row.rainfall !== null ? `${row.rainfall.toFixed(1)} mm` : 'Missing'}
                     </td>
-                    <td className="py-1.5 px-3 text-slate-400">{row.historicalAvg.toFixed(1)} mm</td>
-                    <td className={`py-1.5 px-3 font-mono ${diff === null ? 'text-slate-500' : diff >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    <td className="py-1.5 px-3 text-slate-500">{row.historicalAvg.toFixed(1)} mm</td>
+                    <td className={`py-1.5 px-3 font-mono ${diff === null ? 'text-slate-400' : diff >= 0 ? 'text-emerald-700 font-semibold' : 'text-rose-600 font-semibold'}`}>
                       {diff === null ? '—' : diff >= 0 ? `+${diff.toFixed(1)} mm` : `${diff.toFixed(1)} mm`}
                     </td>
                     <td className="py-1.5 px-3 text-[10px]">
                       {isMissing ? (
-                        <span className="px-1.5 py-0.5 rounded bg-rose-950/60 text-rose-300 border border-rose-800/50">Missing</span>
+                        <span className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 font-semibold">Missing</span>
                       ) : isZero ? (
-                        <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">Zero Rain</span>
+                        <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">Zero Rain</span>
                       ) : (
-                        <span className="px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300">Observed</span>
+                        <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold">Observed</span>
                       )}
                     </td>
                   </tr>
@@ -393,18 +382,18 @@ export const RainfallTrendsView: React.FC = () => {
       {/* 4 Summary Stat Cards matching design */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="p-4">
-          <span className="text-xs text-slate-400 font-medium">Total Rainfall</span>
-          <div className="mt-2 text-2xl font-black text-white">
+          <span className="text-xs text-slate-500 font-medium">Total Rainfall</span>
+          <div className="mt-2 text-2xl font-black text-slate-900">
             {!isConfiguredPilot ? '--' : locKey === 'gorakhpur' ? '1,024' : '230'}{' '}
-            <span className="text-sm font-semibold text-slate-400">mm</span>
+            <span className="text-sm font-semibold text-slate-500">mm</span>
           </div>
           <span
             className={`text-xs font-bold mt-1 block ${
               !isConfiguredPilot
-                ? 'text-slate-400'
+                ? 'text-slate-500'
                 : locKey === 'gorakhpur'
-                ? 'text-emerald-400'
-                : 'text-rose-400'
+                ? 'text-emerald-700'
+                : 'text-rose-600'
             }`}
           >
             {!isConfiguredPilot ? 'Data Pending' : locKey === 'gorakhpur' ? '+16% vs historical' : '-72% vs historical'}
@@ -412,17 +401,17 @@ export const RainfallTrendsView: React.FC = () => {
         </Card>
 
         <Card className="p-4">
-          <span className="text-xs text-slate-400 font-medium">Wet Days (&gt;2.5mm)</span>
-          <div className="mt-2 text-2xl font-black text-white">
+          <span className="text-xs text-slate-500 font-medium">Wet Days (&gt;2.5mm)</span>
+          <div className="mt-2 text-2xl font-black text-slate-900">
             {!isConfiguredPilot ? '--' : locKey === 'gorakhpur' ? '56 days' : '18 days'}
           </div>
           <span
             className={`text-xs font-bold mt-1 block ${
               !isConfiguredPilot
-                ? 'text-slate-400'
+                ? 'text-slate-500'
                 : locKey === 'gorakhpur'
-                ? 'text-emerald-400'
-                : 'text-rose-400'
+                ? 'text-emerald-700'
+                : 'text-rose-600'
             }`}
           >
             {!isConfiguredPilot ? 'Pending Ingestion' : locKey === 'gorakhpur' ? '+12% vs historical' : '-60% vs historical'}
@@ -430,23 +419,23 @@ export const RainfallTrendsView: React.FC = () => {
         </Card>
 
         <Card className="p-4">
-          <span className="text-xs text-slate-400 font-medium">Maximum Daily Rainfall</span>
-          <div className="mt-2 text-2xl font-black text-cyan-300">
+          <span className="text-xs text-slate-500 font-medium">Maximum Daily Rainfall</span>
+          <div className="mt-2 text-2xl font-black text-blue-700">
             {!isConfiguredPilot ? '--' : locKey === 'gorakhpur' ? '128' : '48'}{' '}
-            <span className="text-sm font-semibold text-slate-400">mm</span>
+            <span className="text-sm font-semibold text-slate-500">mm</span>
           </div>
-          <span className="text-xs text-slate-400 font-mono mt-1 block">
+          <span className="text-xs text-slate-500 font-mono mt-1 block">
             {!isConfiguredPilot ? 'No station observations' : locKey === 'gorakhpur' ? 'Recorded 25 Aug 2026' : 'Recorded 14 Jul 2026'}
           </span>
         </Card>
 
         <Card className="p-4">
-          <span className="text-xs text-slate-400 font-medium">Historical Baseline Avg</span>
-          <div className="mt-2 text-2xl font-black text-slate-300">
+          <span className="text-xs text-slate-500 font-medium">Historical Baseline Avg</span>
+          <div className="mt-2 text-2xl font-black text-slate-700">
             {!isConfiguredPilot ? '--' : locKey === 'gorakhpur' ? '867' : '820'}{' '}
-            <span className="text-sm font-semibold text-slate-400">mm</span>
+            <span className="text-sm font-semibold text-slate-500">mm</span>
           </div>
-          <span className="text-xs text-slate-400 font-mono mt-1 block">
+          <span className="text-xs text-slate-500 font-mono mt-1 block">
             {!isConfiguredPilot ? 'Awaiting Normal Calibration' : '30-Year Series (1991–2020)'}
           </span>
         </Card>

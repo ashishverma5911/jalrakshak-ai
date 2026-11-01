@@ -98,10 +98,10 @@ export const DataProvenanceBadge: React.FC<DataProvenanceBadgeProps> = ({
 
       {/* Expandable Provenance Disclosure Card */}
       {isOpen && (
-        <div className="absolute left-0 mt-2 z-50 w-80 p-3.5 rounded-xl bg-navy-900/95 backdrop-blur-md border border-navy-750 shadow-2xl text-left text-xs space-y-2 animate-in fade-in zoom-in-95 duration-150">
-          <div className="flex items-center justify-between pb-2 border-b border-navy-800">
-            <span className="font-bold text-white flex items-center">
-              <Database className="w-3.5 h-3.5 mr-1.5 text-cyan-400" />
+        <div className="absolute left-0 mt-2 z-50 w-80 p-3.5 rounded-xl bg-white border border-slate-200 shadow-xl text-left text-xs space-y-2 animate-in fade-in zoom-in-95 duration-150">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+            <span className="font-bold text-slate-900 flex items-center">
+              <Database className="w-3.5 h-3.5 mr-1.5 text-blue-600" />
               Dataset Provenance
             </span>
             <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono border ${badgeStyle}`}>
@@ -109,36 +109,36 @@ export const DataProvenanceBadge: React.FC<DataProvenanceBadgeProps> = ({
             </span>
           </div>
 
-          <div className="space-y-1.5 text-[11px] text-slate-300">
+          <div className="space-y-1.5 text-[11px] text-slate-600">
             <div className="flex justify-between">
-              <span className="text-slate-400">Data Source:</span>
-              <span className="font-medium text-slate-200">{source}</span>
+              <span className="text-slate-500">Data Source:</span>
+              <span className="font-medium text-slate-800">{source}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">Dataset Version:</span>
-              <span className="font-mono text-cyan-300">{datasetVersion}</span>
+              <span className="text-slate-500">Dataset Version:</span>
+              <span className="font-mono text-blue-600 font-semibold">{datasetVersion}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">Spatial Resolution:</span>
-              <span className="font-medium text-slate-200">{spatialResolution}</span>
+              <span className="text-slate-500">Spatial Resolution:</span>
+              <span className="font-medium text-slate-800">{spatialResolution}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">Observation Window:</span>
-              <span className="font-medium text-slate-200">{observationPeriod}</span>
+              <span className="text-slate-500">Observation Window:</span>
+              <span className="font-medium text-slate-800">{observationPeriod}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">Quality Status:</span>
-              <span className="capitalize font-mono text-emerald-400">{qualityStatus}</span>
+              <span className="text-slate-500">Quality Status:</span>
+              <span className="capitalize font-mono font-semibold text-emerald-600">{qualityStatus}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">Last Synced:</span>
-              <span className="text-slate-200">{lastUpdated}</span>
+              <span className="text-slate-500">Last Synced:</span>
+              <span className="text-slate-800">{lastUpdated}</span>
             </div>
           </div>
 
           {limitations && (
-            <div className="pt-2 border-t border-navy-800/80 text-[10px] text-slate-400 leading-relaxed">
-              <span className="font-semibold text-amber-300 block mb-0.5">Scientific Boundary Notice:</span>
+            <div className="pt-2 border-t border-slate-100 text-[10px] text-slate-500 leading-relaxed">
+              <span className="font-semibold text-amber-700 block mb-0.5">Scientific Boundary Notice:</span>
               {limitations}
             </div>
           )}

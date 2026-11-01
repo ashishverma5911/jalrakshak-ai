@@ -35,10 +35,15 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 export const Sidebar: React.FC = () => {
-  const { currentRoute, setCurrentRoute, isSidebarOpen, setIsSidebarOpen } = useApp();
+  const { currentRoute, setCurrentRoute, isSidebarOpen, setIsSidebarOpen, selectedLocation, setSelectedLocation } = useApp();
 
   const handleNavClick = (id: NavigationRoute) => {
     setCurrentRoute(id);
+    if (id === 'flood' && (selectedLocation === 'mahoba' || selectedLocation === 'all')) {
+      setSelectedLocation('gorakhpur');
+    } else if (id === 'drought' && (selectedLocation === 'gorakhpur' || selectedLocation === 'all')) {
+      setSelectedLocation('mahoba');
+    }
     if (window.innerWidth < 1024) {
       setIsSidebarOpen(false);
     }

@@ -17,14 +17,14 @@ export const Card: React.FC<CardProps> = ({
   let variantStyle = 'glass-panel';
   if (variant === 'flood') variantStyle = 'glass-panel-flood';
   if (variant === 'drought') variantStyle = 'glass-panel-drought';
-  if (variant === 'subtle') variantStyle = 'bg-navy-900/60 border border-navy-800/80 backdrop-blur-md';
+  if (variant === 'subtle') variantStyle = 'bg-slate-50/80 border border-slate-200/90';
 
   const hoverStyle = hoverEffect
-    ? 'transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover cursor-pointer'
+    ? 'transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md cursor-pointer'
     : '';
 
   return (
-    <div className={`rounded-2xl p-5 ${variantStyle} ${hoverStyle} ${className}`} {...props}>
+    <div className={`rounded-xl p-5 ${variantStyle} ${hoverStyle} ${className}`} {...props}>
       {children}
     </div>
   );

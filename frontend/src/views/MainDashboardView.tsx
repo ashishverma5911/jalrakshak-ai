@@ -9,7 +9,6 @@ import {
   TrendingUp,
   TrendingDown,
   AlertTriangle,
-  Flame,
   MapPin,
   Database,
   BarChart2,
@@ -30,7 +29,6 @@ import { DataProvenanceBadge } from '../components/common/DataProvenanceBadge';
 import {
   UP_DISTRICTS_DATA,
   getFilteredRainfallData,
-  IS_DEMO_DATA,
   DEMO_DATA_DISCLAIMER,
 } from '../data/mockData';
 
@@ -52,7 +50,7 @@ export const MainDashboardView: React.FC = () => {
   const [liveEnvironmental, setLiveEnvironmental] = useState<EnvironmentalLiveResponse | null>(null);
   const [isRefreshingLive, setIsRefreshingLive] = useState(false);
   const [liveRefreshMsg, setLiveRefreshMsg] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [, setIsLoading] = useState(false);
 
   useEffect(() => {
     setIsLoading(true);
@@ -110,37 +108,37 @@ export const MainDashboardView: React.FC = () => {
     <div className="space-y-6">
       {/* 0. Demo Data & State Notice Banner */}
       {dataFreshnessMode === 'error' ? (
-        <div className="p-3.5 rounded-2xl bg-rose-500/20 border border-rose-500/50 flex items-center justify-between text-xs text-rose-200">
+        <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-between text-xs text-rose-800 shadow-sm">
           <div className="flex items-center space-x-2.5">
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
             <span>
               <strong>Simulated Feed Error:</strong> Failed to connect to geospatial ingestion stream. Demonstrating error state.
             </span>
           </div>
           <button
             onClick={() => setDataFreshnessMode('fresh')}
-            className="px-2.5 py-1 rounded-lg bg-rose-500 text-white font-bold hover:bg-rose-400 transition"
+            className="px-2.5 py-1 rounded-lg bg-rose-600 text-white font-bold hover:bg-rose-700 transition"
           >
             Retry Connection
           </button>
         </div>
       ) : dataFreshnessMode === 'stale' ? (
-        <div className="p-3.5 rounded-2xl bg-amber-500/20 border border-amber-500/50 flex items-center justify-between text-xs text-amber-200">
+        <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-between text-xs text-amber-900 shadow-sm">
           <div className="flex items-center space-x-2.5">
-            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
             <span>
               <strong>Stale Data Warning:</strong> Satellite telemetry is older than 24 hours. Historical baselines retained.
             </span>
           </div>
           <button
             onClick={() => setDataFreshnessMode('fresh')}
-            className="px-2.5 py-1 rounded-lg bg-amber-500 text-navy-950 font-bold hover:bg-amber-400 transition"
+            className="px-2.5 py-1 rounded-lg bg-amber-600 text-white font-bold hover:bg-amber-700 transition"
           >
             Acknowledge
           </button>
         </div>
       ) : (
-        <div className="px-3.5 py-2.5 rounded-xl bg-navy-900/60 border border-navy-800 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+        <div className="px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-600">
           <div className="flex items-center space-x-2">
             <DataProvenanceBadge
               mode={backendDashboard?.data_mode || (isConfiguredPilot ? 'CACHED_VERIFIED' : 'DATA_PENDING')}
@@ -152,26 +150,26 @@ export const MainDashboardView: React.FC = () => {
               <strong>Decision-Support Prototype:</strong> {DEMO_DATA_DISCLAIMER}
             </span>
           </div>
-          <span className="font-mono text-cyan-400 hidden md:inline">Pilot: UP-2026</span>
+          <span className="font-mono text-blue-700 font-semibold hidden md:inline">Pilot: UP-2026</span>
         </div>
       )}
 
       {/* 0.1 Candidate District Isolation & Pending Telemetry Banner */}
       {!isConfiguredPilot && (
-        <div className="p-4 rounded-2xl bg-navy-900/90 border border-cyan-500/30 shadow-lg space-y-3">
+        <div className="p-4 rounded-2xl bg-white border border-blue-200 shadow-sm space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center space-x-3">
-              <div className="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-300 shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shrink-0">
                 <Database className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white flex items-center space-x-2">
+                <h3 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
                   <span>{activeLocationData.name} {activeLocationData.hindiName ? `(${activeLocationData.hindiName})` : ''}</span>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                     Candidate District • Ingestion Pending
                   </span>
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-500">
                   Administrative Region: {activeLocationData.region} • Basin: {activeLocationData.riverBasin || 'Regional Basin'}
                 </p>
               </div>
@@ -179,61 +177,63 @@ export const MainDashboardView: React.FC = () => {
             <div className="flex items-center space-x-2 text-xs">
               <button
                 onClick={() => setSelectedLocation('gorakhpur')}
-                className="px-2.5 py-1 rounded-lg bg-sky-500/20 text-sky-300 hover:bg-sky-500/30 border border-sky-500/40 transition font-medium text-[11px]"
+                className="px-2.5 py-1 rounded-lg bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 transition font-medium text-[11px]"
               >
                 Gorakhpur Flood Pilot
               </button>
               <button
                 onClick={() => setSelectedLocation('mahoba')}
-                className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 transition font-medium text-[11px]"
+                className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200 transition font-medium text-[11px]"
               >
                 Mahoba Drought Pilot
               </button>
             </div>
           </div>
-          <div className="p-3 rounded-xl bg-navy-950/80 border border-navy-800 text-xs text-slate-300 leading-relaxed">
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 leading-relaxed">
             <strong>Scientific Integrity & Data Isolation Notice:</strong> JalRakshak AI maintains strict isolation between administrative regions. Candidate districts are registered in the spatial hierarchy (EPSG:4326), but hazard indicators and calibrated return periods will only be activated following validated station-blended telemetry ingestion. <em>This district never inherits or interpolates risk scores from Gorakhpur or Mahoba.</em>
           </div>
         </div>
       )}
 
-      {/* 1. Hero Section with Headline & Hazard Focus Cards */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-2">
-        <div className="max-w-2xl">
-          <h1 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight">
-            Smarter Insights <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-sky-300">
-              for Safer Communities
+      {/* 1. Operational Overview Header & Hazard Quick Launchers */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-1 border-b border-slate-200">
+        <div>
+          <div className="flex items-center space-x-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+              Operations Center
             </span>
+            <span className="text-xs text-slate-500 font-mono">Uttar Pradesh Agro-Hydrology</span>
+          </div>
+          <h1 className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight mt-1">
+            Smarter Insights <span className="text-blue-700">for Safer Communities</span>
           </h1>
-          <p className="mt-2 text-slate-300 text-sm lg:text-base leading-relaxed">
+          <p className="text-xs text-slate-600 mt-0.5">
             AI-powered flood and drought risk assessment for Uttar Pradesh pilot districts.
           </p>
         </div>
 
         {/* Hazard Focus Quick Launchers */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           {/* Flood Focus Pill Button */}
           <button
             onClick={() => {
               setSelectedLocation('gorakhpur');
               setCurrentRoute('flood');
             }}
-            className="flex-1 sm:flex-none flex items-center justify-between space-x-4 px-5 py-3.5 rounded-2xl bg-gradient-to-r from-sky-950/80 to-cyan-950/80 border border-cyan-400/40 hover:border-cyan-400 shadow-glow-cyan interactive-btn group"
+            className="flex items-center space-x-3 px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-blue-400 shadow-xs interactive-btn group"
+            title="Focus Gorakhpur Flood Pilot"
           >
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-300 flex items-center justify-center">
-                <Waves className="w-5 h-5 group-hover:scale-110 transition-transform" />
-              </div>
-              <div className="text-left">
-                <div className="text-xs uppercase font-bold tracking-wider text-cyan-300">
-                  Flood Focus
-                </div>
-                <div className="text-sm font-extrabold text-white">Gorakhpur</div>
-              </div>
+            <div className="w-8 h-8 rounded-lg bg-sky-50 border border-sky-100 text-sky-700 flex items-center justify-center shrink-0">
+              <Waves className="w-4 h-4" />
             </div>
-            <div className="w-7 h-7 rounded-full bg-cyan-500/30 flex items-center justify-center text-cyan-200 group-hover:translate-x-1 transition-transform">
-              <ChevronRight className="w-4 h-4" />
+            <div className="text-left">
+              <div className="text-[10px] uppercase font-bold tracking-wider text-sky-700">
+                Flood Focus
+              </div>
+              <div className="text-xs font-bold text-slate-900">Gorakhpur</div>
+            </div>
+            <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all">
+              <ChevronRight className="w-3.5 h-3.5" />
             </div>
           </button>
 
@@ -243,21 +243,20 @@ export const MainDashboardView: React.FC = () => {
               setSelectedLocation('mahoba');
               setCurrentRoute('drought');
             }}
-            className="flex-1 sm:flex-none flex items-center justify-between space-x-4 px-5 py-3.5 rounded-2xl bg-gradient-to-r from-amber-950/80 to-orange-950/80 border border-amber-400/40 hover:border-amber-400 shadow-glow-amber interactive-btn group"
+            className="flex items-center space-x-3 px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-amber-400 shadow-xs interactive-btn group"
+            title="Focus Mahoba Drought Pilot"
           >
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center">
-                <Sun className="w-5 h-5 group-hover:scale-110 transition-transform" />
-              </div>
-              <div className="text-left">
-                <div className="text-xs uppercase font-bold tracking-wider text-amber-300">
-                  Drought Focus
-                </div>
-                <div className="text-sm font-extrabold text-white">Mahoba</div>
-              </div>
+            <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+              <Sun className="w-4 h-4" />
             </div>
-            <div className="w-7 h-7 rounded-full bg-amber-500/30 flex items-center justify-center text-amber-200 group-hover:translate-x-1 transition-transform">
-              <ChevronRight className="w-4 h-4" />
+            <div className="text-left">
+              <div className="text-[10px] uppercase font-bold tracking-wider text-amber-700">
+                Drought Focus
+              </div>
+              <div className="text-xs font-bold text-slate-900">Mahoba</div>
+            </div>
+            <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all">
+              <ChevronRight className="w-3.5 h-3.5" />
             </div>
           </button>
         </div>
@@ -265,14 +264,14 @@ export const MainDashboardView: React.FC = () => {
 
       {/* 1.5 Live Environmental Data Telemetry Bar */}
       {liveEnvironmental && (
-        <div className="p-4 rounded-2xl bg-navy-900/80 border border-navy-750 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-start md:items-center space-x-3.5">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5 md:mt-0">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shrink-0 mt-0.5 md:mt-0">
               <Activity className="w-5 h-5 animate-pulse" />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-bold text-sm text-white">
+                <span className="font-bold text-sm text-slate-900">
                   Live Environmental NWP Telemetry: {liveEnvironmental.district_name}
                 </span>
                 <DataProvenanceBadge
@@ -284,7 +283,7 @@ export const MainDashboardView: React.FC = () => {
                   compact={true}
                 />
               </div>
-              <p className="text-xs text-slate-300 mt-0.5">
+              <p className="text-xs text-slate-600 mt-0.5">
                 {liveEnvironmental.current_conditions ? (
                   <span>
                     <strong>Current Conditions:</strong> {liveEnvironmental.current_conditions.condition_summary} •{' '}
@@ -293,11 +292,11 @@ export const MainDashboardView: React.FC = () => {
                 ) : (
                   <span>
                     Centroid coordinates ({liveEnvironmental.coordinates.lat.toFixed(4)}°N, {liveEnvironmental.coordinates.lng.toFixed(4)}°E) •{' '}
-                    <span className="text-slate-400">{liveEnvironmental.provider_status?.message || 'Awaiting live telemetry activation'}</span>
+                    <span className="text-slate-500">{liveEnvironmental.provider_status?.message || 'Awaiting live telemetry activation'}</span>
                   </span>
                 )}
               </p>
-              <p className="text-[11px] text-slate-400 italic mt-0.5">
+              <p className="text-[11px] text-slate-500 italic mt-0.5">
                 {liveEnvironmental.spatial_disclaimer}
               </p>
             </div>
@@ -305,17 +304,17 @@ export const MainDashboardView: React.FC = () => {
 
           <div className="flex items-center gap-2 self-end md:self-center shrink-0">
             {liveRefreshMsg && (
-              <span className="text-[11px] text-cyan-300 font-mono hidden lg:inline">
+              <span className="text-[11px] text-blue-700 font-mono hidden lg:inline">
                 {liveRefreshMsg}
               </span>
             )}
             <button
               onClick={handleRefreshLive}
               disabled={isRefreshingLive}
-              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-navy-800 hover:bg-navy-750 text-cyan-300 border border-cyan-500/30 text-xs font-semibold transition disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 text-xs font-semibold transition disabled:opacity-50 cursor-pointer"
               title="Trigger on-demand fetch from Open-Meteo"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingLive ? 'animate-spin text-cyan-400' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingLive ? 'animate-spin text-blue-600' : ''}`} />
               <span>{isRefreshingLive ? 'Refreshing...' : 'Refresh Live'}</span>
             </button>
           </div>
@@ -327,80 +326,80 @@ export const MainDashboardView: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card variant="default" className="relative overflow-hidden group">
             <div className="flex items-start justify-between">
-              <div className="w-11 h-11 rounded-xl bg-slate-800 text-slate-400 flex items-center justify-center">
+              <div className="w-11 h-11 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center">
                 <CloudRain className="w-6 h-6" />
               </div>
-              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
                 Data Pending
               </span>
             </div>
             <div className="mt-4">
-              <p className="text-xs text-slate-400 font-medium">Current Rainfall</p>
-              <p className="text-xs font-semibold text-slate-200">{activeLocationData.name}</p>
+              <p className="text-xs text-slate-500 font-medium">Current Rainfall</p>
+              <p className="text-xs font-semibold text-slate-700">{activeLocationData.name}</p>
               <div className="mt-1 flex items-baseline space-x-2">
                 <span className="text-3xl font-extrabold text-slate-400 tracking-tight">--</span>
-                <span className="text-sm font-semibold text-slate-500">mm</span>
+                <span className="text-sm font-semibold text-slate-400">mm</span>
               </div>
-              <p className="mt-2 text-xs text-slate-400">Station telemetry stream unlinked</p>
+              <p className="mt-2 text-xs text-slate-500">Station telemetry stream unlinked</p>
             </div>
           </Card>
 
           <Card variant="default" className="relative overflow-hidden group">
             <div className="flex items-start justify-between">
-              <div className="w-11 h-11 rounded-xl bg-slate-800 text-slate-400 flex items-center justify-center">
+              <div className="w-11 h-11 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center">
                 <Waves className="w-6 h-6" />
               </div>
-              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
                 Data Pending
               </span>
             </div>
             <div className="mt-4">
-              <p className="text-xs text-slate-400 font-medium">7-Day Cumulative</p>
-              <p className="text-xs font-semibold text-slate-200">{activeLocationData.name}</p>
+              <p className="text-xs text-slate-500 font-medium">7-Day Cumulative</p>
+              <p className="text-xs font-semibold text-slate-700">{activeLocationData.name}</p>
               <div className="mt-1 flex items-baseline space-x-2">
                 <span className="text-3xl font-extrabold text-slate-400 tracking-tight">--</span>
-                <span className="text-sm font-semibold text-slate-500">mm</span>
+                <span className="text-sm font-semibold text-slate-400">mm</span>
               </div>
-              <p className="mt-2 text-xs text-slate-400">Ingestion pipeline awaiting execution</p>
+              <p className="mt-2 text-xs text-slate-500">Ingestion pipeline awaiting execution</p>
             </div>
           </Card>
 
           <Card variant="default" className="relative overflow-hidden group">
             <div className="flex items-start justify-between">
-              <div className="w-11 h-11 rounded-xl bg-slate-800 text-slate-400 flex items-center justify-center">
+              <div className="w-11 h-11 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center">
                 <Sun className="w-6 h-6" />
               </div>
-              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
                 Pending Baseline
               </span>
             </div>
             <div className="mt-4">
-              <p className="text-xs text-slate-400 font-medium">Seasonal Normal</p>
-              <p className="text-xs font-semibold text-slate-200">{activeLocationData.name}</p>
+              <p className="text-xs text-slate-500 font-medium">Seasonal Normal</p>
+              <p className="text-xs font-semibold text-slate-700">{activeLocationData.name}</p>
               <div className="mt-1 flex items-baseline space-x-2">
                 <span className="text-3xl font-extrabold text-slate-400 tracking-tight">--</span>
-                <span className="text-sm font-semibold text-slate-500">mm</span>
+                <span className="text-sm font-semibold text-slate-400">mm</span>
               </div>
-              <p className="mt-2 text-xs text-slate-400">30-year climatology uncalibrated</p>
+              <p className="mt-2 text-xs text-slate-500">30-year climatology uncalibrated</p>
             </div>
           </Card>
 
           <Card variant="default" className="relative overflow-hidden group">
             <div className="flex items-start justify-between">
-              <div className="w-11 h-11 rounded-xl bg-slate-800 text-slate-400 flex items-center justify-center">
+              <div className="w-11 h-11 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center">
                 <Sprout className="w-6 h-6" />
               </div>
-              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
                 Model Offline
               </span>
             </div>
             <div className="mt-4">
-              <p className="text-xs text-slate-400 font-medium">Hazard Status</p>
-              <p className="text-xs font-semibold text-slate-200">{activeLocationData.name}</p>
+              <p className="text-xs text-slate-500 font-medium">Hazard Status</p>
+              <p className="text-xs font-semibold text-slate-700">{activeLocationData.name}</p>
               <div className="mt-1 flex items-baseline space-x-2">
                 <span className="text-2xl font-extrabold text-slate-400 tracking-tight">Pending</span>
               </div>
-              <p className="mt-2 text-xs text-slate-400">Zero data bleed from pilot models</p>
+              <p className="mt-2 text-xs text-slate-500">Zero data bleed from pilot models</p>
             </div>
           </Card>
         </div>
@@ -417,26 +416,26 @@ export const MainDashboardView: React.FC = () => {
             className="relative overflow-hidden group"
           >
             <div className="flex items-start justify-between">
-              <div className="w-11 h-11 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 flex items-center justify-center shadow-inner">
+              <div className="w-11 h-11 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center">
                 <CloudRain className="w-6 h-6" />
               </div>
               <button
-                className="w-7 h-7 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center justify-center group-hover:bg-cyan-500 group-hover:text-white transition-all"
+                className="w-7 h-7 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center group-hover:bg-sky-600 group-hover:text-white transition-all"
                 aria-label="View Gorakhpur Current Rainfall"
               >
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
             <div className="mt-4">
-              <p className="text-xs text-slate-400 font-medium">Current Rainfall</p>
-              <p className="text-xs font-semibold text-cyan-300">Gorakhpur</p>
+              <p className="text-xs text-slate-500 font-medium">Current Rainfall</p>
+              <p className="text-xs font-semibold text-sky-700">Gorakhpur</p>
               <div className="mt-1 flex items-baseline space-x-2">
-                <span className="text-3xl font-extrabold text-white tracking-tight">
+                <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
                   {gorakhpurData.rainfall7dMm}
                 </span>
-                <span className="text-sm font-semibold text-slate-300">mm</span>
+                <span className="text-sm font-semibold text-slate-500">mm</span>
               </div>
-              <div className="mt-2 flex items-center text-xs font-bold text-emerald-400">
+              <div className="mt-2 flex items-center text-xs font-bold text-emerald-600">
                 <TrendingUp className="w-3.5 h-3.5 mr-1" />
                 <span>+{gorakhpurData.anomalyPct}% vs normal</span>
               </div>
@@ -454,26 +453,26 @@ export const MainDashboardView: React.FC = () => {
             className="relative overflow-hidden group"
           >
             <div className="flex items-start justify-between">
-              <div className="w-11 h-11 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-300 flex items-center justify-center shadow-inner">
+              <div className="w-11 h-11 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
                 <Waves className="w-6 h-6" />
               </div>
               <button
-                className="w-7 h-7 rounded-full bg-sky-500/20 text-sky-300 flex items-center justify-center group-hover:bg-sky-500 group-hover:text-white transition-all"
+                className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all"
                 aria-label="View Gorakhpur 7-Day Rainfall"
               >
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
             <div className="mt-4">
-              <p className="text-xs text-slate-400 font-medium">7-Day Rainfall</p>
-              <p className="text-xs font-semibold text-sky-300">Gorakhpur</p>
+              <p className="text-xs text-slate-500 font-medium">7-Day Rainfall</p>
+              <p className="text-xs font-semibold text-blue-700">Gorakhpur</p>
               <div className="mt-1 flex items-baseline space-x-2">
-                <span className="text-3xl font-extrabold text-white tracking-tight">
+                <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
                   {gorakhpurData.rainfall30dMm}
                 </span>
-                <span className="text-sm font-semibold text-slate-300">mm</span>
+                <span className="text-sm font-semibold text-slate-500">mm</span>
               </div>
-              <div className="mt-2 flex items-center text-xs font-bold text-emerald-400">
+              <div className="mt-2 flex items-center text-xs font-bold text-emerald-600">
                 <TrendingUp className="w-3.5 h-3.5 mr-1" />
                 <span>+48% vs normal</span>
               </div>
@@ -491,26 +490,26 @@ export const MainDashboardView: React.FC = () => {
             className="relative overflow-hidden group"
           >
             <div className="flex items-start justify-between">
-              <div className="w-11 h-11 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 flex items-center justify-center shadow-inner">
+              <div className="w-11 h-11 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
                 <Sun className="w-6 h-6" />
               </div>
               <button
-                className="w-7 h-7 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-all"
+                className="w-7 h-7 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition-all"
                 aria-label="View Mahoba 90-Day Rainfall"
               >
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
             <div className="mt-4">
-              <p className="text-xs text-slate-400 font-medium">90-Day Rainfall</p>
-              <p className="text-xs font-semibold text-amber-300">Mahoba</p>
+              <p className="text-xs text-slate-500 font-medium">90-Day Rainfall</p>
+              <p className="text-xs font-semibold text-amber-700">Mahoba</p>
               <div className="mt-1 flex items-baseline space-x-2">
-                <span className="text-3xl font-extrabold text-white tracking-tight">
+                <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
                   {mahobaData.rainfall90dMm}
                 </span>
-                <span className="text-sm font-semibold text-slate-300">mm</span>
+                <span className="text-sm font-semibold text-slate-500">mm</span>
               </div>
-              <div className="mt-2 flex items-center text-xs font-bold text-rose-400">
+              <div className="mt-2 flex items-center text-xs font-bold text-rose-600">
                 <TrendingDown className="w-3.5 h-3.5 mr-1" />
                 <span>{mahobaData.anomalyPct}% vs normal</span>
               </div>
@@ -528,25 +527,25 @@ export const MainDashboardView: React.FC = () => {
             className="relative overflow-hidden group"
           >
             <div className="flex items-start justify-between">
-              <div className="w-11 h-11 rounded-xl bg-orange-500/15 border border-orange-500/30 text-orange-300 flex items-center justify-center shadow-inner">
+              <div className="w-11 h-11 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center">
                 <Sprout className="w-6 h-6" />
               </div>
               <button
-                className="w-7 h-7 rounded-full bg-orange-500/20 text-orange-300 flex items-center justify-center group-hover:bg-orange-500 group-hover:text-white transition-all"
+                className="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center group-hover:bg-orange-600 group-hover:text-white transition-all"
                 aria-label="View Mahoba Seasonal Deficit"
               >
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
             <div className="mt-4">
-              <p className="text-xs text-slate-400 font-medium">Seasonal Deficit</p>
-              <p className="text-xs font-semibold text-orange-300">Mahoba</p>
+              <p className="text-xs text-slate-500 font-medium">Seasonal Deficit</p>
+              <p className="text-xs font-semibold text-orange-700">Mahoba</p>
               <div className="mt-1 flex items-baseline space-x-2">
-                <span className="text-3xl font-extrabold text-rose-400 tracking-tight">
+                <span className="text-3xl font-extrabold text-rose-600 tracking-tight">
                   {mahobaData.seasonalDeficitPct}%
                 </span>
               </div>
-              <div className="mt-2 flex items-center text-xs font-semibold text-amber-300">
+              <div className="mt-2 flex items-center text-xs font-semibold text-amber-800">
                 <span>Severe Bundelkhand deficit</span>
               </div>
             </div>
@@ -559,21 +558,21 @@ export const MainDashboardView: React.FC = () => {
         {/* Left Column: Risk Map Overview (5 cols) */}
         <div className="lg:col-span-5 flex flex-col">
           <Card className="flex-1 flex flex-col justify-between">
-            <div className="flex items-center justify-between pb-3 border-b border-navy-800">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center space-x-2.5">
-                <div className="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-300 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
                   <MapPin className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white">Risk Map Overview</h3>
-                  <p className="text-[11px] text-slate-400">Uttar Pradesh pilot zones</p>
+                  <h3 className="text-sm font-bold text-slate-900">Risk Map Overview</h3>
+                  <p className="text-[11px] text-slate-500">Uttar Pradesh pilot zones</p>
                 </div>
               </div>
 
               <select
                 value={selectedLocation}
                 onChange={(e) => setSelectedLocation(e.target.value as any)}
-                className="bg-navy-850 border border-navy-700 text-xs text-slate-200 rounded-lg px-2.5 py-1 focus:outline-none focus:border-cyan-400"
+                className="bg-slate-50 border border-slate-200 text-xs text-slate-800 rounded-lg px-2.5 py-1 focus:outline-none focus:border-blue-500"
               >
                 <option value="all">Uttar Pradesh (All)</option>
                 <option value="gorakhpur">Gorakhpur</option>
@@ -593,15 +592,15 @@ export const MainDashboardView: React.FC = () => {
           <Card className="flex-1 flex flex-col justify-between">
             <div>
               {/* Header with District Switcher */}
-              <div className="flex items-center justify-between pb-3 border-b border-navy-800">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div className="flex items-center space-x-2">
-                  <Calendar className="w-4 h-4 text-cyan-400" />
-                  <h3 className="text-sm font-bold text-white">Recent Rainfall Trend</h3>
+                  <Calendar className="w-4 h-4 text-blue-600" />
+                  <h3 className="text-sm font-bold text-slate-900">Recent Rainfall Trend</h3>
                 </div>
                 <select
                   value={trendDistrict}
                   onChange={(e) => setTrendDistrict(e.target.value as any)}
-                  className="bg-navy-850 border border-navy-700 text-xs text-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:border-cyan-400"
+                  className="bg-slate-50 border border-slate-200 text-xs text-slate-800 rounded-lg px-2 py-1 focus:outline-none focus:border-blue-500"
                 >
                   <option value="gorakhpur">Gorakhpur</option>
                   <option value="mahoba">Mahoba</option>
@@ -609,7 +608,7 @@ export const MainDashboardView: React.FC = () => {
               </div>
 
               {/* Range Selector Pills */}
-              <div className="flex items-center gap-1.5 mt-3 p-1 rounded-xl bg-navy-900 border border-navy-800 text-xs">
+              <div className="flex items-center gap-1.5 mt-3 p-1 rounded-xl bg-slate-100 border border-slate-200 text-xs">
                 {(
                   [
                     { key: '7', label: '7 Days' },
@@ -623,8 +622,8 @@ export const MainDashboardView: React.FC = () => {
                     onClick={() => setTrendRange(range.key)}
                     className={`flex-1 py-1 text-center font-medium rounded-lg transition-all ${
                       trendRange === range.key
-                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
-                        : 'text-slate-400 hover:text-white'
+                        ? 'bg-white text-blue-700 shadow-sm border border-slate-200 font-semibold'
+                        : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
                     {range.label}
@@ -635,15 +634,15 @@ export const MainDashboardView: React.FC = () => {
               {/* Chart Component */}
               <div className="mt-4">
                 {!isConfiguredPilot ? (
-                  <div className="p-6 rounded-2xl bg-navy-900/80 border border-navy-800 text-center space-y-3">
-                    <div className="w-10 h-10 mx-auto rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center">
+                  <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 text-center space-y-3">
+                    <div className="w-10 h-10 mx-auto rounded-xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center">
                       <Database className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-white">
+                      <h4 className="text-xs font-bold text-slate-900">
                         No Historical Telemetry Ingested for {activeLocationData.name}
                       </h4>
-                      <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                      <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
                         Daily precipitation series pending onboarding into partition table. JalRakshak integrity rules strictly prevent proxy interpolation from Gorakhpur or Mahoba.
                       </p>
                     </div>
@@ -653,7 +652,7 @@ export const MainDashboardView: React.FC = () => {
                           setSelectedLocation('gorakhpur');
                           setTrendDistrict('gorakhpur');
                         }}
-                        className="px-2.5 py-1 rounded-lg bg-sky-500/20 text-sky-300 hover:bg-sky-500/30 border border-sky-500/40 text-[11px] font-semibold transition"
+                        className="px-2.5 py-1 rounded-lg bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 text-[11px] font-semibold transition"
                       >
                         View Gorakhpur Series
                       </button>
@@ -662,7 +661,7 @@ export const MainDashboardView: React.FC = () => {
                           setSelectedLocation('mahoba');
                           setTrendDistrict('mahoba');
                         }}
-                        className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 text-[11px] font-semibold transition"
+                        className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200 text-[11px] font-semibold transition"
                       >
                         View Mahoba Series
                       </button>
@@ -671,8 +670,8 @@ export const MainDashboardView: React.FC = () => {
                 ) : (
                   <RainfallChart
                     data={chartData}
-                    barColor={trendDistrict === 'gorakhpur' ? '#00e5ff' : '#f59e0b'}
-                    lineColor="#38bdf8"
+                    barColor={trendDistrict === 'gorakhpur' ? '#0284c7' : '#d97706'}
+                    lineColor="#2563eb"
                     height={190}
                   />
                 )}
@@ -680,14 +679,14 @@ export const MainDashboardView: React.FC = () => {
             </div>
 
             {/* Key Insights bullets */}
-            <div className="mt-4 pt-3 border-t border-navy-800 space-y-2">
-              <div className="text-xs font-bold text-slate-300 flex items-center space-x-1.5">
-                <Info className="w-3.5 h-3.5 text-cyan-400" />
+            <div className="mt-4 pt-3 border-t border-slate-100 space-y-2">
+              <div className="text-xs font-bold text-slate-700 flex items-center space-x-1.5">
+                <Info className="w-3.5 h-3.5 text-blue-600" />
                 <span>Key Insights</span>
               </div>
-              <ul className="text-xs text-slate-300 space-y-1.5">
+              <ul className="text-xs text-slate-600 space-y-1.5">
                 <li className="flex items-start space-x-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1.5 shrink-0" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 shrink-0" />
                   <span>
                     {!isConfiguredPilot
                       ? `Observational pipeline for ${activeLocationData.name} (${activeLocationData.region}) is awaiting ingestion.`
@@ -697,7 +696,7 @@ export const MainDashboardView: React.FC = () => {
                   </span>
                 </li>
                 <li className="flex items-start space-x-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 mt-1.5 shrink-0" />
                   <span>
                     {!isConfiguredPilot
                       ? 'Zero data bleed: candidate districts do not inherit telemetry or hazard models from pilot zones.'
@@ -707,7 +706,7 @@ export const MainDashboardView: React.FC = () => {
                   </span>
                 </li>
                 <li className="flex items-start space-x-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-600 mt-1.5 shrink-0" />
                   <span>
                     {!isConfiguredPilot
                       ? 'Hydrological and meteorological risk baselines are unconfigured until station observations are verified.'
@@ -723,14 +722,14 @@ export const MainDashboardView: React.FC = () => {
         <div className="lg:col-span-3 space-y-4">
           {/* Card 1: Alert & Updates */}
           <Card className="p-4">
-            <div className="flex items-center justify-between pb-2 border-b border-navy-800">
-              <h3 className="text-xs font-bold text-white flex items-center space-x-1.5">
-                <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
                 <span>Alert & Updates</span>
               </h3>
               <button
                 onClick={() => setCurrentRoute('monitoring')}
-                className="text-[11px] text-cyan-400 hover:underline flex items-center"
+                className="text-[11px] text-blue-600 hover:text-blue-800 font-semibold hover:underline flex items-center"
               >
                 View All <ChevronRight className="w-3 h-3" />
               </button>
@@ -741,13 +740,13 @@ export const MainDashboardView: React.FC = () => {
                   setSelectedLocation('gorakhpur');
                   setCurrentRoute('flood');
                 }}
-                className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/25 hover:border-rose-500/50 cursor-pointer transition"
+                className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 hover:border-rose-300 cursor-pointer transition shadow-sm"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-rose-300">High Rainfall Alert</span>
-                  <span className="text-[10px] text-rose-400 font-mono">Gorakhpur</span>
+                  <span className="text-xs font-bold text-rose-900">High Rainfall Alert</span>
+                  <span className="text-[10px] text-rose-700 bg-rose-100 px-1 rounded font-mono font-semibold">Gorakhpur</span>
                 </div>
-                <p className="text-[11px] text-slate-300 mt-0.5 leading-snug">
+                <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">
                   Recent rainfall significantly above historical average.
                 </p>
               </div>
@@ -757,13 +756,13 @@ export const MainDashboardView: React.FC = () => {
                   setSelectedLocation('mahoba');
                   setCurrentRoute('drought');
                 }}
-                className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 hover:border-amber-500/50 cursor-pointer transition"
+                className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 hover:border-amber-300 cursor-pointer transition shadow-sm"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-amber-300">Drought Watch</span>
-                  <span className="text-[10px] text-amber-400 font-mono">Mahoba</span>
+                  <span className="text-xs font-bold text-amber-900">Drought Watch</span>
+                  <span className="text-[10px] text-amber-800 bg-amber-100 px-1 rounded font-mono font-semibold">Mahoba</span>
                 </div>
-                <p className="text-[11px] text-slate-300 mt-0.5 leading-snug">
+                <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">
                   Rainfall below historical average for the season.
                 </p>
               </div>
@@ -772,14 +771,14 @@ export const MainDashboardView: React.FC = () => {
 
           {/* Card 2: Key Locations */}
           <Card className="p-4">
-            <div className="flex items-center justify-between pb-2 border-b border-navy-800">
-              <h3 className="text-xs font-bold text-white flex items-center space-x-1.5">
-                <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
+                <MapPin className="w-3.5 h-3.5 text-blue-600" />
                 <span>Key Locations</span>
               </h3>
               <button
                 onClick={() => setCurrentRoute('map')}
-                className="text-[11px] text-cyan-400 hover:underline flex items-center"
+                className="text-[11px] text-blue-600 hover:text-blue-800 font-semibold hover:underline flex items-center"
               >
                 View All <ChevronRight className="w-3 h-3" />
               </button>
@@ -790,18 +789,18 @@ export const MainDashboardView: React.FC = () => {
                   setSelectedLocation('gorakhpur');
                   setCurrentRoute('flood');
                 }}
-                className="p-2 rounded-xl bg-navy-850/60 hover:bg-navy-800 border border-navy-700/60 flex items-center justify-between cursor-pointer transition"
+                className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-between cursor-pointer transition"
               >
                 <div className="flex items-center space-x-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center">
                     <MapPin className="w-3.5 h-3.5" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-white">Gorakhpur</div>
-                    <div className="text-[10px] text-slate-400 font-mono">26.7606° N, 83.3732° E</div>
+                    <div className="text-xs font-bold text-slate-900">Gorakhpur</div>
+                    <div className="text-[10px] text-slate-500 font-mono">26.7606° N, 83.3732° E</div>
                   </div>
                 </div>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-sky-100 text-sky-700 border border-sky-200">
                   Flood Focus
                 </span>
               </div>
@@ -811,18 +810,18 @@ export const MainDashboardView: React.FC = () => {
                   setSelectedLocation('mahoba');
                   setCurrentRoute('drought');
                 }}
-                className="p-2 rounded-xl bg-navy-850/60 hover:bg-navy-800 border border-navy-700/60 flex items-center justify-between cursor-pointer transition"
+                className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-between cursor-pointer transition"
               >
                 <div className="flex items-center space-x-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
                     <MapPin className="w-3.5 h-3.5" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-white">Mahoba</div>
-                    <div className="text-[10px] text-slate-400 font-mono">25.2953° N, 79.8630° E</div>
+                    <div className="text-xs font-bold text-slate-900">Mahoba</div>
+                    <div className="text-[10px] text-slate-500 font-mono">25.2953° N, 79.8630° E</div>
                   </div>
                 </div>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
                   Drought Focus
                 </span>
               </div>
@@ -831,34 +830,34 @@ export const MainDashboardView: React.FC = () => {
 
           {/* Card 3: Data Sources */}
           <Card className="p-4">
-            <div className="flex items-center justify-between pb-2 border-b border-navy-800">
-              <h3 className="text-xs font-bold text-white flex items-center space-x-1.5">
-                <Database className="w-3.5 h-3.5 text-cyan-400" />
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
+                <Database className="w-3.5 h-3.5 text-blue-600" />
                 <span>Data Sources</span>
               </h3>
               <button
                 onClick={() => setCurrentRoute('sources')}
-                className="text-[11px] text-cyan-400 hover:underline flex items-center"
+                className="text-[11px] text-blue-600 hover:text-blue-800 font-semibold hover:underline flex items-center"
               >
                 View All <ChevronRight className="w-3 h-3" />
               </button>
             </div>
-            <div className="mt-3 space-y-1.5 text-xs text-slate-300">
-              <div className="flex items-center justify-between p-1.5 rounded-lg bg-navy-900/60">
-                <span className="font-semibold text-white">NASA GPM IMERG</span>
-                <span className="text-[10px] text-slate-400">0.1° Gridded Sat</span>
+            <div className="mt-3 space-y-1.5 text-xs text-slate-600">
+              <div className="flex items-center justify-between p-1.5 rounded-lg bg-slate-50 border border-slate-100">
+                <span className="font-semibold text-slate-900">NASA GPM IMERG</span>
+                <span className="text-[10px] text-slate-500 font-mono">0.1° Gridded Sat</span>
               </div>
-              <div className="flex items-center justify-between p-1.5 rounded-lg bg-navy-900/60">
-                <span className="font-semibold text-white">CHIRPS Daily</span>
-                <span className="text-[10px] text-slate-400">1981–Present</span>
+              <div className="flex items-center justify-between p-1.5 rounded-lg bg-slate-50 border border-slate-100">
+                <span className="font-semibold text-slate-900">CHIRPS Daily</span>
+                <span className="text-[10px] text-slate-500 font-mono">1981–Present</span>
               </div>
-              <div className="flex items-center justify-between p-1.5 rounded-lg bg-navy-900/60">
-                <span className="font-semibold text-white">SRTM DEM</span>
-                <span className="text-[10px] text-slate-400">30m Elevation</span>
+              <div className="flex items-center justify-between p-1.5 rounded-lg bg-slate-50 border border-slate-100">
+                <span className="font-semibold text-slate-900">SRTM DEM</span>
+                <span className="text-[10px] text-slate-500 font-mono">30m Elevation</span>
               </div>
-              <div className="flex items-center justify-between p-1.5 rounded-lg bg-navy-900/60">
-                <span className="font-semibold text-white">UPSDMA / IMD</span>
-                <span className="text-[10px] text-emerald-400">Official Warning Links</span>
+              <div className="flex items-center justify-between p-1.5 rounded-lg bg-slate-50 border border-slate-100">
+                <span className="font-semibold text-slate-900">UPSDMA / IMD</span>
+                <span className="text-[10px] text-emerald-700 font-semibold">Official Warning Links</span>
               </div>
             </div>
           </Card>
@@ -869,74 +868,74 @@ export const MainDashboardView: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
         <button
           onClick={() => setCurrentRoute('trends')}
-          className="flex items-center justify-between p-4 rounded-2xl glass-panel hover:glass-panel-flood interactive-btn text-left group"
+          className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all interactive-btn text-left group shadow-sm"
         >
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-300 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
               <BarChart2 className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors">
+              <div className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                 Rainfall & Trends
               </div>
-              <div className="text-xs text-slate-400">Historical analysis</div>
+              <div className="text-xs text-slate-500">Historical analysis</div>
             </div>
           </div>
-          <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all" />
+          <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
         </button>
 
         <button
           onClick={() => setCurrentRoute('assistant')}
-          className="flex items-center justify-between p-4 rounded-2xl glass-panel hover:glass-panel-flood interactive-btn text-left group"
+          className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all interactive-btn text-left group shadow-sm"
         >
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-300 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-sm font-bold text-white group-hover:text-sky-300 transition-colors">
+              <div className="text-sm font-bold text-slate-900 group-hover:text-sky-600 transition-colors">
                 AI Assistant
               </div>
-              <div className="text-xs text-slate-400">Ask questions</div>
+              <div className="text-xs text-slate-500">Ask questions</div>
             </div>
           </div>
-          <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-sky-400 group-hover:translate-x-1 transition-all" />
+          <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-sky-600 group-hover:translate-x-1 transition-all" />
         </button>
 
         <button
           onClick={() => setCurrentRoute('preparedness')}
-          className="flex items-center justify-between p-4 rounded-2xl glass-panel hover:border-emerald-500/40 interactive-btn text-left group"
+          className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 hover:border-emerald-400 hover:shadow-md transition-all interactive-btn text-left group shadow-sm"
         >
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors">
+              <div className="text-sm font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">
                 Preparedness
               </div>
-              <div className="text-xs text-slate-400">Safety guidelines</div>
+              <div className="text-xs text-slate-500">Safety guidelines</div>
             </div>
           </div>
-          <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
+          <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all" />
         </button>
 
         <button
           onClick={() => setCurrentRoute('sources')}
-          className="flex items-center justify-between p-4 rounded-2xl glass-panel hover:border-amber-500/40 interactive-btn text-left group"
+          className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 hover:border-amber-400 hover:shadow-md transition-all interactive-btn text-left group shadow-sm"
         >
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
               <Database className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors">
+              <div className="text-sm font-bold text-slate-900 group-hover:text-amber-700 transition-colors">
                 Data Sources
               </div>
-              <div className="text-xs text-slate-400">Transparent data</div>
+              <div className="text-xs text-slate-500">Transparent data</div>
             </div>
           </div>
-          <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
+          <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-amber-600 group-hover:translate-x-1 transition-all" />
         </button>
       </div>
     </div>
