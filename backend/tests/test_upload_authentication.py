@@ -19,7 +19,9 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.core.auth import verify_api_key, get_configured_upload_api_key
+from app.core.rate_limiter import upload_limiter, cleanup_limiter
 from app.services.upload_service import ScientificUploadService
+from app.services.storage_service import LocalStorageBackend, StorageTier, StorageDurability
 
 client = TestClient(app)
 
@@ -31,6 +33,9 @@ def setup_upload_test_env(tmp_path, monkeypatch):
     """
     Isolates registry and storage directories to tmp_path and configures test secret.
     """
+    upload_limiter.reset()
+    cleanup_limiter.reset()
+
     test_reg = tmp_path / "upload_registry.json"
     test_quarantine = tmp_path / "quarantine"
     test_verified = tmp_path / "verified"
@@ -281,3 +286,71 @@ def test_verify_api_key_constant_time():
     assert verify_api_key("", "secret123") is False
     assert verify_api_key("secret123", "") is False
     assert verify_api_key("", "") is False
+
+
+# =============================================================================
+# 8. Rate Limiting Tests (Milestone 7 Remediation)
+# =============================================================================
+
+def test_cleanup_rate_limiting_enforced():
+    """Verify POST /api/v1/uploads/cleanup triggers HTTP 429 when exceeding 3 requests per minute."""
+    cleanup_limiter.reset()
+    headers = {"X-API-Key": TEST_AUTH_KEY}
+
+    # First 3 requests succeed
+    for _ in range(3):
+        res = client.post("/api/v1/uploads/cleanup", headers=headers)
+        assert res.status_code == 200
+
+    # 4th request must be rejected with 429 Too Many Requests
+    res4 = client.post("/api/v1/uploads/cleanup", headers=headers)
+    assert res4.status_code == 429
+    assert "Rate limit exceeded" in res4.json()["detail"]
+    assert "Retry-After" in res4.headers
+
+
+def test_upload_rate_limiting_enforced():
+    """Verify POST /api/v1/uploads/scientific-dataset triggers HTTP 429 when exceeding 10 requests per minute."""
+    upload_limiter.reset()
+    headers = {"X-API-Key": TEST_AUTH_KEY}
+    csv_bytes = b"date,rainfall_mm\n2024-08-10,10.0\n"
+
+    # Make 10 requests
+    for i in range(10):
+        files = {"file": (f"test_{i}.csv", io.BytesIO(csv_bytes), "text/csv")}
+        res = client.post("/api/v1/uploads/scientific-dataset", files=files, headers=headers)
+        assert res.status_code == 200
+
+    # 11th request triggers 429
+    files = {"file": ("test_overflow.csv", io.BytesIO(csv_bytes), "text/csv")}
+    res11 = client.post("/api/v1/uploads/scientific-dataset", files=files, headers=headers)
+    assert res11.status_code == 429
+    assert "Rate limit exceeded" in res11.json()["detail"]
+
+
+# =============================================================================
+# 9. Storage Service Abstraction Tests (Milestone 7 Remediation)
+# =============================================================================
+
+def test_storage_service_abstraction_and_stats(tmp_path):
+    """Verify LocalStorageBackend tier segregation and storage stats."""
+    backend = LocalStorageBackend(root_dir=tmp_path / "custom_storage")
+    stats = backend.get_storage_stats()
+    assert stats["durability"] == StorageDurability.EPHEMERAL_LOCAL.value
+    assert stats["total_storage_bytes"] == 0
+
+    # Store payload in verified tier
+    p = backend.store(StorageTier.VERIFIED_DATASET, "valid.csv", b"sample data")
+    assert p.exists()
+    assert backend.retrieve(StorageTier.VERIFIED_DATASET, "valid.csv") == b"sample data"
+
+    updated_stats = backend.get_storage_stats()
+    assert updated_stats["total_storage_bytes"] == len(b"sample data")
+    assert updated_stats["tier_file_counts"]["verified"] == 1
+
+
+def test_storage_service_path_traversal_blocked(tmp_path):
+    """Verify LocalStorageBackend rejects path traversal escape attempts."""
+    backend = LocalStorageBackend(root_dir=tmp_path / "custom_storage")
+    with pytest.raises(ValueError, match="Path traversal detected"):
+        backend.store(StorageTier.QUARANTINE, "../../evil.sh", b"malicious")

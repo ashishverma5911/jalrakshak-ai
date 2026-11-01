@@ -12,6 +12,7 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException, status, De
 from fastapi.responses import JSONResponse
 
 from ..core.auth import require_upload_auth
+from ..core.rate_limiter import rate_limit_upload, rate_limit_cleanup
 from ..schemas.upload import DatasetUploadResponse, UploadHistoryItem
 from ..services.upload_service import (
     ScientificUploadService,
@@ -31,7 +32,7 @@ router = APIRouter(
 _upload_semaphore = asyncio.Semaphore(1)
 
 
-@router.post("/scientific-dataset", response_model=DatasetUploadResponse)
+@router.post("/scientific-dataset", response_model=DatasetUploadResponse, dependencies=[Depends(rate_limit_upload)])
 async def upload_scientific_dataset(
     file: UploadFile = File(..., description="Scientific dataset: CSV, NetCDF (.nc), GeoTIFF (.tif), or ZIP"),
     target_region_id: Optional[str] = Form(None, description="Optional target district (e.g. district-gorakhpur)"),
@@ -131,7 +132,7 @@ def get_upload_history(
     return items
 
 
-@router.post("/cleanup")
+@router.post("/cleanup", dependencies=[Depends(rate_limit_cleanup)])
 def trigger_quarantine_cleanup(
     max_age_hours: float = 24.0,
     auth: str = Depends(require_upload_auth),
@@ -139,6 +140,6 @@ def trigger_quarantine_cleanup(
     """
     POST /api/v1/uploads/cleanup
     Manually triggers quarantine file expiration and quota enforcement.
-    Requires authentication.
+    Requires authentication and is rate-limited.
     """
     return ScientificUploadService.cleanup_expired_quarantine(max_age_hours=max_age_hours)

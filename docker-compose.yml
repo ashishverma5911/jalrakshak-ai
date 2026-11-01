@@ -1,6 +1,24 @@
 version: '3.8'
 
 services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: jalrakshak-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-jalrakshak}
+      POSTGRES_USER: ${POSTGRES_USER:-jalrakshak_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jalrakshak_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-jalrakshak_user} -d ${POSTGRES_DB:-jalrakshak}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: ./backend
@@ -11,10 +29,14 @@ services:
     environment:
       - PORT=8000
       - HOST=0.0.0.0
+      - DATABASE_URL=postgresql+psycopg://${POSTGRES_USER:-jalrakshak_user}:${POSTGRES_PASSWORD:-jalrakshak_password}@db:5432/${POSTGRES_DB:-jalrakshak}
       - CORS_ORIGINS=http://localhost:5173,http://localhost:80,http://127.0.0.1:80
       - DATA_STALENESS_HOURS=24.0
       - GEMMA_API_URL=http://host.docker.internal:11434/api/generate
       - GEMMA_MODEL_NAME=gemma:4
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
@@ -32,3 +54,6 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+
+volumes:
+  postgres_data:
