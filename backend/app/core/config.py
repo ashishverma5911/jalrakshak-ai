@@ -38,12 +38,34 @@ CHIRPS_BASE_URL = os.getenv("CHIRPS_BASE_URL", "https://data.chc.ucsb.edu/produc
 
 # API Ingestion & Upload Security
 UPLOAD_API_KEY = os.getenv("UPLOAD_API_KEY", "").strip() or os.getenv("ADMIN_API_KEY", "").strip()
+UPLOADS_DIR = Path(os.getenv("UPLOADS_DIR", str(DATA_DIR / "uploads"))).resolve()
 
-# Database Configuration (PostgreSQL / PostGIS with resilient local dev fallback)
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql+psycopg://jalrakshak_user:jalrakshak_password@localhost:5432/jalrakshak"
-)
+
+def normalize_database_url(url: str) -> str:
+    """
+    Normalizes PostgreSQL connection strings to use the psycopg v3 dialect
+    (postgresql+psycopg://) supported by SQLAlchemy 2.0 without requiring legacy psycopg2.
+    """
+    if not url:
+        return url
+    if url.startswith("postgres://"):
+        return url.replace("postgres://", "postgresql+psycopg://", 1)
+    if url.startswith("postgresql://") and not url.startswith("postgresql+"):
+        return url.replace("postgresql://", "postgresql+psycopg://", 1)
+    return url
+
+
+# Database Configuration (PostgreSQL / PostGIS with resilient local SQLite demo fallback)
+DEMO_MODE = os.getenv("DEMO_MODE", "true").lower() in ("true", "1", "yes")
+
+_env_db_url = os.getenv("DATABASE_URL", "").strip()
+if _env_db_url:
+    DATABASE_URL = normalize_database_url(_env_db_url)
+elif DEMO_MODE:
+    DATABASE_URL = f"sqlite:///{DATA_DIR}/jalrakshak_demo.db"
+else:
+    DATABASE_URL = "postgresql+psycopg://jalrakshak_user:jalrakshak_password@localhost:5432/jalrakshak"
+
 DB_POOL_SIZE = int(os.getenv("DB_POOL_SIZE", "5"))
 DB_MAX_OVERFLOW = int(os.getenv("DB_MAX_OVERFLOW", "10"))
 DB_POOL_TIMEOUT = float(os.getenv("DB_POOL_TIMEOUT", "30.0"))

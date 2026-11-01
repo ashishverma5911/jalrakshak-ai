@@ -48,9 +48,8 @@ from ..pipeline.raster_decoder import (
 
 logger = logging.getLogger("jalrakshak.services.upload")
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-DATA_DIR = BASE_DIR / "data"
-UPLOADS_DIR = DATA_DIR / "uploads"
+from ..core.config import DATA_DIR, UPLOADS_DIR
+
 QUARANTINE_DIR = UPLOADS_DIR / "quarantine"
 VERIFIED_DIR = UPLOADS_DIR / "verified"
 SPOOL_DIR = UPLOADS_DIR / "spool"

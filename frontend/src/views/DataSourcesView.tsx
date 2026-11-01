@@ -348,6 +348,15 @@ export const DataSourcesView: React.FC = () => {
             </div>
           </div>
 
+          {/* Ephemeral Demo Storage Transparency Notice */}
+          <div className="p-3.5 rounded-2xl bg-amber-950/40 border border-amber-600/40 flex items-start space-x-3 text-xs text-amber-200/90">
+            <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <div className="leading-relaxed">
+              <strong className="text-amber-300 font-semibold">₹0 Public Demo — Ephemeral Upload Notice: </strong>
+              In this zero-cost demonstration environment, user-uploaded datasets and validation reports are stored in temporary container filesystem storage. Uploads are ephemeral and reset whenever the free container restarts or redeploys. Core scientific baselines (CHIRPS historical rainfall, IMD normals, and Survey of India boundaries) remain permanently available.
+            </div>
+          </div>
+
           {/* Upload Form Card */}
           <Card className="p-5">
             <h3 className="text-sm font-bold text-white pb-3 border-b border-navy-800 flex items-center space-x-2">

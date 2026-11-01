@@ -1,12 +1,39 @@
 import logging
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from .core.config import PROJECT_NAME, VERSION, API_V1_PREFIX, CORS_ORIGINS
+from .core.config import PROJECT_NAME, VERSION, API_V1_PREFIX, CORS_ORIGINS, DATABASE_URL, DEMO_MODE
 from .api import health, sources, flood, drought, dashboard, trends, map_layers, assistant, regions, uploads
 
 logger = logging.getLogger("jalrakshak.api")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Application Lifespan Management.
+    In ₹0 Demo Mode or SQLite mode, ensures the spatial database schema
+    and administrative region hierarchy are automatically initialized and seeded.
+    """
+    try:
+        if DATABASE_URL.startswith("sqlite") or DEMO_MODE:
+            from .db.session import engine, init_db_schema, SessionLocal
+            from .db.seeds.seed_regions import seed_database
+            from .db.models import Region
+
+            init_db_schema(engine)
+            with SessionLocal() as db:
+                if db.query(Region).count() == 0:
+                    logger.info("Initializing and seeding demo database schema...")
+                    seed_database(db)
+                    db.commit()
+                    logger.info("Demo database seeded successfully.")
+    except Exception as e:
+        logger.warning(f"Startup database initialization notice: {e}")
+    yield
+
 
 app = FastAPI(
     title="JalRakshak API",
@@ -17,13 +44,16 @@ app = FastAPI(
     version=VERSION,
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
-# CORS configuration
+# CORS configuration (safely handles wildcard domains if configured)
+cors_allow_credentials = "*" not in CORS_ORIGINS
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
-    allow_credentials=True,
+    allow_credentials=cors_allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )

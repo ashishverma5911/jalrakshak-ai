@@ -29,6 +29,7 @@ class StorageTier(str, Enum):
 
 class StorageDurability(str, Enum):
     EPHEMERAL_LOCAL = "EPHEMERAL_LOCAL"
+    EPHEMERAL_DEMO = "EPHEMERAL_DEMO"
     DURABLE_OBJECT_STORE = "DURABLE_OBJECT_STORE"
 
 

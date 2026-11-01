@@ -50,3 +50,5 @@ spool/
 *.tmp
 *.crdownload
 upload_registry.json
+*.db
+*.sqlite3
