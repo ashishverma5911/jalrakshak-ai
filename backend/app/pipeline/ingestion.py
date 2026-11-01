@@ -6,11 +6,12 @@ from datetime import datetime, timezone
 
 from ..core.config import DATA_DIR
 from .validation import DataValidator, DataValidationError
+from .spatial_aggregation import SpatialAggregator, SpatialAggregationError
 
 class DataIngestionService:
     """
     Ingests and normalizes precipitation observations and district metadata.
-    Enforces validation, duplicate pruning, and stale detection.
+    Enforces validation, duplicate pruning, boundary checking, and strict data mode isolation.
     """
 
     def __init__(self, data_dir: Optional[Path] = None):
@@ -30,8 +31,10 @@ class DataIngestionService:
 
     def get_district_info(self, district_id: str) -> Dict[str, Any]:
         districts = self.get_districts_metadata()
+        clean_id = district_id.lower().replace("district-", "").strip()
         for d in districts:
-            if d["id"].lower() == district_id.lower():
+            d_id = d["id"].lower().replace("district-", "").strip()
+            if d_id == clean_id:
                 return d
         raise DataValidationError(f"District '{district_id}' is not in the supported pilot registry.")
 
@@ -39,27 +42,47 @@ class DataIngestionService:
         self,
         district_id: str,
         start_date: Optional[str] = None,
-        end_date: Optional[str] = None
+        end_date: Optional[str] = None,
+        mode: str = "demo"
     ) -> pd.DataFrame:
         """
         Loads, validates and filters daily rainfall for a district.
+        Parameters:
+            district_id: Slug or ID (e.g. 'gorakhpur' or 'district-gorakhpur')
+            start_date: Optional ISO date string
+            end_date: Optional ISO date string
+            mode: 'verified' (genuine observations) or 'demo' (prototype fixtures)
         """
-        district_id = district_id.lower()
-        # Verify district exists
+        district_id = district_id.lower().replace("district-", "").strip()
+        region_id = f"district-{district_id}"
+
+        # Confirm district exists
         self.get_district_info(district_id)
 
-        # Cache check
-        if district_id not in self._cache:
-            csv_path = self.data_dir / f"{district_id}_chirps_daily.csv"
-            if not csv_path.exists():
-                raise FileNotFoundError(f"Daily precipitation series not found for '{district_id}'")
+        # Check file existence first to return 404 for unconfigured districts
+        verified_path = self.data_dir / f"{district_id}_chirps_daily_verified.csv"
+        demo_path = self.data_dir / f"{district_id}_chirps_daily.csv"
+
+        if mode == "verified":
+            csv_path = verified_path if verified_path.exists() else demo_path
+            # For verified operational mode, validate administrative boundary polygon
+            SpatialAggregator.load_district_boundary(region_id)
+        else:
+            csv_path = demo_path if demo_path.exists() else verified_path
+
+        if not csv_path.exists():
+            raise FileNotFoundError(f"Daily precipitation series not found for '{district_id}'")
+
+        cache_key = f"{district_id}_{mode}"
+
+        if cache_key not in self._cache:
             raw_df = pd.read_csv(csv_path)
             clean_df, report = DataValidator.validate_and_clean_rainfall_df(
                 raw_df, date_col="date", val_col="rainfall_mm"
             )
-            self._cache[district_id] = clean_df
+            self._cache[cache_key] = clean_df
 
-        df = self._cache[district_id].copy()
+        df = self._cache[cache_key].copy()
 
         # Date filtering
         if start_date:

@@ -7,6 +7,10 @@ class DataValidationError(Exception):
     """Raised when data input fails integrity checks."""
     pass
 
+class PrecipitationValidationError(DataValidationError):
+    """Raised when precipitation observation fails integrity checks."""
+    pass
+
 class DataValidator:
     """
     Enforces data integrity, chronological alignment, unit constraints,
