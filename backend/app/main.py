@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from .core.config import PROJECT_NAME, VERSION, API_V1_PREFIX, CORS_ORIGINS, DATABASE_URL, DEMO_MODE
-from .api import health, sources, flood, drought, dashboard, trends, map_layers, assistant, regions, uploads
+from .api import health, sources, flood, drought, dashboard, trends, map_layers, assistant, regions, uploads, environmental
 
 logger = logging.getLogger("jalrakshak.api")
 
@@ -69,6 +69,7 @@ app.include_router(map_layers.router, prefix=API_V1_PREFIX)
 app.include_router(assistant.router, prefix=API_V1_PREFIX)
 app.include_router(regions.router, prefix=API_V1_PREFIX)
 app.include_router(uploads.router, prefix=API_V1_PREFIX)
+app.include_router(environmental.router, prefix=API_V1_PREFIX)
 
 @app.get("/")
 def root():
@@ -80,6 +81,7 @@ def root():
         "docs": "/docs",
         "health": f"{API_V1_PREFIX}/health",
         "regions": f"{API_V1_PREFIX}/regions",
+        "environmental": f"{API_V1_PREFIX}/environmental/live",
         "is_demo_data": True,
     }
 

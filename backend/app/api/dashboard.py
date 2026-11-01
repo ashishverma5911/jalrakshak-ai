@@ -25,7 +25,12 @@ def get_dashboard_overview(
     now_iso = datetime.now(timezone.utc).isoformat()
     districts = ingestion_service.get_districts_metadata()
     is_demo = (mode == "demo")
-    data_mode = "DEMONSTRATION" if is_demo else "CACHED_VERIFIED"
+    if mode == "live":
+        data_mode = "LIVE_MODEL"
+    elif is_demo:
+        data_mode = "DEMONSTRATION"
+    else:
+        data_mode = "CACHED_VERIFIED"
 
     # Get pilot data
     g_info = ingestion_service.get_district_info("gorakhpur")

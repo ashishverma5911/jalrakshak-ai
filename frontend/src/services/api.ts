@@ -8,6 +8,9 @@ import type {
   RegionDetail,
   RegionHazardsResponse,
   RegionListResponse,
+  EnvironmentalLiveResponse,
+  EnvironmentalRefreshResponse,
+  EnvironmentalSystemStatusResponse,
 } from '../types';
 
 export type {
@@ -15,11 +18,24 @@ export type {
   RegionDetail,
   RegionHazardsResponse,
   RegionListResponse,
+  EnvironmentalLiveResponse,
+  EnvironmentalRefreshResponse,
+  EnvironmentalSystemStatusResponse,
 };
 
 const API_BASE_URL = (((import.meta as any).env?.VITE_API_BASE_URL as string) || '/api/v1').replace(/\/+$/, '');
 
-export type DataMode = 'LIVE_VERIFIED' | 'CACHED_VERIFIED' | 'DEMONSTRATION' | 'DATA_PENDING' | 'DATA_STALE';
+export type DataMode =
+  | 'LIVE_VERIFIED'
+  | 'CACHED_VERIFIED'
+  | 'DEMONSTRATION'
+  | 'DATA_PENDING'
+  | 'DATA_STALE'
+  | 'LIVE_MODEL'
+  | 'PROVIDER_ERROR'
+  | 'MANUAL_UPLOAD'
+  | 'FORECAST'
+  | 'CACHED';
 
 export interface SourceMetadata {
   source_id: string;
@@ -437,5 +453,19 @@ export const apiService = {
       `/uploads/cleanup?max_age_hours=${maxAgeHours}`,
       { method: 'POST' }
     );
+  },
+
+  fetchEnvironmentalLive: (location: string = 'gorakhpur', refresh: boolean = false): Promise<EnvironmentalLiveResponse> => {
+    return apiFetch<EnvironmentalLiveResponse>(`/environmental/live?location=${encodeURIComponent(location)}&refresh=${refresh}`);
+  },
+
+  fetchEnvironmentalStatus: (): Promise<EnvironmentalSystemStatusResponse> => {
+    return apiFetch<EnvironmentalSystemStatusResponse>('/environmental/status');
+  },
+
+  refreshEnvironmentalData: (location: string = 'gorakhpur'): Promise<EnvironmentalRefreshResponse> => {
+    return apiFetch<EnvironmentalRefreshResponse>(`/environmental/refresh?location=${encodeURIComponent(location)}`, {
+      method: 'POST',
+    });
   },
 };

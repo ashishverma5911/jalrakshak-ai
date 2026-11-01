@@ -14,7 +14,7 @@ ingestion_service = DataIngestionService()
 def get_flood_risk(
     location: str = Query("gorakhpur", description="Target district identifier (e.g. gorakhpur)"),
     reference_date: str = Query("2026-10-28", description="Evaluation anchor date (YYYY-MM-DD)"),
-    mode: str = Query("demo", description="Data mode: 'demo' (prototype fixtures) or 'verified' (genuine observations)")
+    mode: str = Query("demo", description="Data mode: 'demo' (prototype fixtures), 'verified' (genuine observations), or 'live' (Open-Meteo forecast)")
 ) -> HazardAssessmentResponse:
     """
     Computes flood-related meteorological accumulation and terrain indicators for the specified district.

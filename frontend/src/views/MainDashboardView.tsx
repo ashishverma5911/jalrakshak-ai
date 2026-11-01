@@ -19,12 +19,13 @@ import {
   Calendar,
   AlertCircle,
   RefreshCw,
+  Activity,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Card } from '../components/common/Card';
 import { DistrictRiskMap } from '../components/map/DistrictRiskMap';
 import { RainfallChart, RainfallDataPoint } from '../components/charts/RainfallChart';
-import { apiService, DashboardOverviewResponse, RainfallTrendsResponse } from '../services/api';
+import { apiService, DashboardOverviewResponse, RainfallTrendsResponse, EnvironmentalLiveResponse } from '../services/api';
 import { DataProvenanceBadge } from '../components/common/DataProvenanceBadge';
 import {
   UP_DISTRICTS_DATA,
@@ -48,6 +49,9 @@ export const MainDashboardView: React.FC = () => {
   const [trendDistrict, setTrendDistrict] = useState<'gorakhpur' | 'mahoba'>('gorakhpur');
   const [backendDashboard, setBackendDashboard] = useState<DashboardOverviewResponse | null>(null);
   const [backendTrends, setBackendTrends] = useState<RainfallTrendsResponse | null>(null);
+  const [liveEnvironmental, setLiveEnvironmental] = useState<EnvironmentalLiveResponse | null>(null);
+  const [isRefreshingLive, setIsRefreshingLive] = useState(false);
+  const [liveRefreshMsg, setLiveRefreshMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -58,7 +62,29 @@ export const MainDashboardView: React.FC = () => {
       .then((data) => setBackendDashboard(data))
       .catch(() => {})
       .finally(() => setIsLoading(false));
+
+    apiService
+      .fetchEnvironmentalLive(loc)
+      .then((data) => setLiveEnvironmental(data))
+      .catch(() => {});
   }, [selectedLocation]);
+
+  const handleRefreshLive = async () => {
+    if (isRefreshingLive) return;
+    setIsRefreshingLive(true);
+    setLiveRefreshMsg(null);
+    try {
+      const loc = selectedLocation === 'all' ? 'gorakhpur' : selectedLocation;
+      const res = await apiService.refreshEnvironmentalData(loc);
+      setLiveRefreshMsg(res.message);
+      const updated = await apiService.fetchEnvironmentalLive(loc);
+      setLiveEnvironmental(updated);
+    } catch (err: any) {
+      setLiveRefreshMsg(err?.message || 'Refresh failed');
+    } finally {
+      setIsRefreshingLive(false);
+    }
+  };
 
   useEffect(() => {
     const rangeParam = trendRange === '7' ? '7d' : trendRange === '30' ? '30d' : trendRange === '90' ? '90d' : '365d';
@@ -236,6 +262,65 @@ export const MainDashboardView: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* 1.5 Live Environmental Data Telemetry Bar */}
+      {liveEnvironmental && (
+        <div className="p-4 rounded-2xl bg-navy-900/80 border border-navy-750 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start md:items-center space-x-3.5">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5 md:mt-0">
+              <Activity className="w-5 h-5 animate-pulse" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-bold text-sm text-white">
+                  Live Environmental NWP Telemetry: {liveEnvironmental.district_name}
+                </span>
+                <DataProvenanceBadge
+                  mode={liveEnvironmental.data_mode}
+                  source={liveEnvironmental.model_name}
+                  datasetVersion="Open-Meteo CC-BY 4.0"
+                  spatialResolution={liveEnvironmental.spatial_representation === 'representative_point_estimate' ? 'Representative Point at Centroid' : 'Gridded'}
+                  lastUpdated={liveEnvironmental.freshness.retrieval_timestamp.split('T')[0]}
+                  compact={true}
+                />
+              </div>
+              <p className="text-xs text-slate-300 mt-0.5">
+                {liveEnvironmental.current_conditions ? (
+                  <span>
+                    <strong>Current Conditions:</strong> {liveEnvironmental.current_conditions.condition_summary} •{' '}
+                    <span>{liveEnvironmental.attribution}</span>
+                  </span>
+                ) : (
+                  <span>
+                    Centroid coordinates ({liveEnvironmental.coordinates.lat.toFixed(4)}°N, {liveEnvironmental.coordinates.lng.toFixed(4)}°E) •{' '}
+                    <span className="text-slate-400">{liveEnvironmental.provider_status?.message || 'Awaiting live telemetry activation'}</span>
+                  </span>
+                )}
+              </p>
+              <p className="text-[11px] text-slate-400 italic mt-0.5">
+                {liveEnvironmental.spatial_disclaimer}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-end md:self-center shrink-0">
+            {liveRefreshMsg && (
+              <span className="text-[11px] text-cyan-300 font-mono hidden lg:inline">
+                {liveRefreshMsg}
+              </span>
+            )}
+            <button
+              onClick={handleRefreshLive}
+              disabled={isRefreshingLive}
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-navy-800 hover:bg-navy-750 text-cyan-300 border border-cyan-500/30 text-xs font-semibold transition disabled:opacity-50 cursor-pointer"
+              title="Trigger on-demand fetch from Open-Meteo"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingLive ? 'animate-spin text-cyan-400' : ''}`} />
+              <span>{isRefreshingLive ? 'Refreshing...' : 'Refresh Live'}</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 2. Top Metric Cards Row (4 cards matching the approved mockup or candidate pending states) */}
       {!isConfiguredPilot ? (

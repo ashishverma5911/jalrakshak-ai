@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Database, AlertCircle, Clock, Info, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
+import { ShieldCheck, Database, AlertCircle, Clock, Info, CheckCircle2, ChevronDown, ChevronUp, Activity } from 'lucide-react';
 import type { DataMode } from '../../types';
 
 export interface DataProvenanceBadgeProps {
@@ -34,11 +34,26 @@ export const DataProvenanceBadge: React.FC<DataProvenanceBadgeProps> = ({
   let dotColor = 'bg-cyan-400';
   let icon = <ShieldCheck className="w-3.5 h-3.5 mr-1 text-cyan-400" />;
 
-  if (cleanMode.includes('LIVE')) {
+  if (cleanMode === 'LIVE_MODEL' || cleanMode.includes('LIVE_MODEL')) {
+    label = 'LIVE MODEL DATA';
+    badgeStyle = 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25';
+    dotColor = 'bg-emerald-400 animate-pulse';
+    icon = <Activity className="w-3.5 h-3.5 mr-1 text-emerald-400" />;
+  } else if (cleanMode.includes('LIVE')) {
     label = 'LIVE VERIFIED DATA';
     badgeStyle = 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25';
     dotColor = 'bg-emerald-400 animate-pulse';
     icon = <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-400" />;
+  } else if (cleanMode.includes('PROVIDER_ERROR') || cleanMode.includes('ERROR')) {
+    label = 'PROVIDER ERROR';
+    badgeStyle = 'bg-rose-500/15 text-rose-300 border-rose-500/30 hover:bg-rose-500/25';
+    dotColor = 'bg-rose-400';
+    icon = <AlertCircle className="w-3.5 h-3.5 mr-1 text-rose-400" />;
+  } else if (cleanMode.includes('FORECAST')) {
+    label = 'NWP FORECAST';
+    badgeStyle = 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/25';
+    dotColor = 'bg-indigo-400';
+    icon = <Activity className="w-3.5 h-3.5 mr-1 text-indigo-400" />;
   } else if (cleanMode.includes('DEMO')) {
     label = 'DEMO DATA';
     badgeStyle = 'bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/25';

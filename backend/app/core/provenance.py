@@ -97,6 +97,31 @@ DATA_SOURCES_REGISTRY: Dict[str, Dict[str, Any]] = {
             "JalRakshak is a decision-support prototype and does not issue or override official warnings."
         ),
     },
+    "open_meteo_forecast": {
+        "id": "open_meteo_forecast",
+        "source_id": "open_meteo_forecast",
+        "name": "Open-Meteo Operational Forecast & Weather Model",
+        "source_name": "Open-Meteo Operational Forecast & Weather Model",
+        "full_name": "Open-Meteo Numerical Weather Prediction (ECMWF IFS / GFS Blended NWP)",
+        "provider": "Open-Meteo GmbH / ECMWF / DWD / NOAA",
+        "status": "integrated_operational_model",
+        "spatial_resolution": "0.1° (~11 km representative point estimate)",
+        "temporal_resolution": "Hourly series + Daily accumulations",
+        "dataset_version": "v1 Forecast API",
+        "coverage": "Global (Uttar Pradesh & Bihar pilots)",
+        "historical_extent": "Past 7 days model estimates + 7 days forecast",
+        "units": "Precipitation (mm), Temperature (°C), Relative Humidity (%), Wind Speed (km/h), ET0 (mm)",
+        "data_mode": "LIVE_MODEL",
+        "update_frequency": "Near-real-time model cycles (~1 hour)",
+        "licensing": "Creative Commons Attribution 4.0 International (CC-BY 4.0)",
+        "license": "CC-BY 4.0 (Open-Meteo)",
+        "access_url": "https://open-meteo.com/",
+        "limitations": (
+            "Numerical weather prediction simulation. Does NOT represent direct in-situ ground gauge observations. "
+            "District centroid coordinates represent point estimates, not district-wide polygon spatial averages. "
+            "Does not simulate river discharge or flood inundation."
+        ),
+    },
 }
 
 def get_all_sources() -> List[Dict[str, Any]]:

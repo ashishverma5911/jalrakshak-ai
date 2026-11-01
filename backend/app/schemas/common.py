@@ -2,8 +2,8 @@ from typing import Optional, List, Dict, Any, Literal
 from datetime import datetime
 from pydantic import BaseModel, Field
 
-DataQualityStatus = Literal["verified", "provisional", "stale", "missing", "simulated_demo"]
-DataMode = Literal["LIVE_VERIFIED", "CACHED_VERIFIED", "DEMONSTRATION", "DATA_PENDING", "DATA_STALE"]
+DataQualityStatus = Literal["verified", "provisional", "stale", "missing", "simulated_demo", "forecast", "observed_estimate", "data_pending"]
+DataMode = Literal["LIVE_VERIFIED", "CACHED_VERIFIED", "DEMONSTRATION", "DATA_PENDING", "DATA_STALE", "LIVE_MODEL", "PROVIDER_ERROR", "MANUAL_UPLOAD", "FORECAST"]
 HazardType = Literal["flood", "drought", "multi_hazard", "rainfall"]
 
 class SourceMetadata(BaseModel):

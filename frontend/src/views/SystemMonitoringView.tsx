@@ -31,7 +31,8 @@ const INITIAL_PIPELINES: PipelineItem[] = [
   { id: 'p2', name: 'CHIRPS Daily Baseline Climatology', source: 'local cached baseline (1991–2024)', status: 'success', lastRun: '28 Oct 2026, 10:30 AM', records: '14,610 daily records' },
   { id: 'p3', name: 'SRTM 30m Digital Elevation Model', source: 'districts_metadata.json (static)', status: 'success', lastRun: 'Static benchmark', records: '75 districts' },
   { id: 'p4', name: 'Feature Engineering & SPI-3 Engine', source: 'scipy.stats gamma MLE engine', status: 'running', lastRun: 'Dynamic on-demand', records: 'Pilot features active' },
-  { id: 'p5', name: 'Gemma 4 Grounded Adapter', source: 'POST /assistant/chat (local runtime)', status: 'idle', lastRun: 'Standby / Deterministic Mode', records: 'Grounded fallback active' },
+  { id: 'p5', name: 'Open-Meteo Weather Forecast (NWP)', source: 'api.open-meteo.com/v1/forecast', status: 'success', lastRun: 'Request-triggered (3h TTL)', records: 'Centroid 14-day hourly/daily' },
+  { id: 'p6', name: 'Gemma 4 Grounded Adapter', source: 'POST /assistant/chat (local runtime)', status: 'idle', lastRun: 'Standby / Deterministic Mode', records: 'Grounded fallback active' },
 ];
 
 const INITIAL_LOGS = [

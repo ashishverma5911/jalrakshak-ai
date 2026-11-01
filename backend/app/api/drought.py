@@ -14,7 +14,7 @@ ingestion_service = DataIngestionService()
 def get_drought_risk(
     location: str = Query("mahoba", description="Target district identifier (e.g. mahoba)"),
     reference_date: str = Query("2026-10-28", description="Evaluation anchor date (YYYY-MM-DD)"),
-    mode: str = Query("demo", description="Data mode: 'demo' (prototype fixtures) or 'verified' (genuine observations)")
+    mode: str = Query("demo", description="Data mode: 'demo' (prototype fixtures), 'verified' (genuine observations), or 'live' (Open-Meteo forecast)")
 ) -> HazardAssessmentResponse:
     """
     Computes meteorological drought indicators (SPI-3, rainfall deficit, dry spell duration) for the district.

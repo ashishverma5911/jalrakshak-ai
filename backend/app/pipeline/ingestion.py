@@ -59,6 +59,24 @@ class DataIngestionService:
         # Confirm district exists
         self.get_district_info(district_id)
 
+        if mode == "live":
+            from ..services.environmental_cache import EnvironmentalCacheService
+            cached = EnvironmentalCacheService.get_cached_district_data(district_id)
+            if cached and "daily_records" in cached and cached["daily_records"]:
+                rows = [
+                    {"date": pd.to_datetime(r["date"]), "rainfall_mm": r.get("rainfall_mm")}
+                    for r in cached["daily_records"]
+                ]
+                df = pd.DataFrame(rows)
+            else:
+                df = pd.DataFrame(columns=["date", "rainfall_mm"])
+
+            if start_date and not df.empty:
+                df = df[df["date"] >= pd.to_datetime(start_date)]
+            if end_date and not df.empty:
+                df = df[df["date"] <= pd.to_datetime(end_date)]
+            return df
+
         # Check file existence first to return 404 for unconfigured districts
         verified_path = self.data_dir / f"{district_id}_chirps_daily_verified.csv"
         demo_path = self.data_dir / f"{district_id}_chirps_daily.csv"

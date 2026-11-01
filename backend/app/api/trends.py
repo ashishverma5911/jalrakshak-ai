@@ -171,7 +171,15 @@ def get_rainfall_trends(
         is_data_avail = True
 
     is_demo = (mode == "demo")
-    data_mode = "DEMONSTRATION" if is_demo else "CACHED_VERIFIED"
+    if mode == "live":
+        data_mode = "LIVE_MODEL"
+        sources_list = ["Open-Meteo Weather Forecast (NWP)", "ECMWF IFS / GFS Blended", "CHIRPS Baseline Normals"]
+    elif is_demo:
+        data_mode = "DEMONSTRATION"
+        sources_list = ["CHIRPS Daily Station Blended v2.0", "NASA GPM IMERG Late Run"]
+    else:
+        data_mode = "CACHED_VERIFIED"
+        sources_list = ["CHIRPS Daily Station Blended v2.0", "NASA GPM IMERG Late Run"]
 
     return RainfallTrendsResponse(
         location_id=district_info["id"],
@@ -188,6 +196,6 @@ def get_rainfall_trends(
         is_data_available=is_data_avail,
         data_mode=data_mode,
         is_demo_data=is_demo,
-        sources=["CHIRPS Daily Station Blended v2.0", "NASA GPM IMERG Late Run"],
+        sources=sources_list,
         series=series_points,
     )

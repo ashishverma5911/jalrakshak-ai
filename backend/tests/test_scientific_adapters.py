@@ -31,6 +31,7 @@ from app.pipeline.adapters import (
     CHIRPSAdapter,
     GPMIMERGAdapter,
     OpenMeteoAdapter,
+    OpenMeteoForecastAdapter,
     SRTMAdapter,
     ScientificSourceRegistry,
 )
@@ -516,17 +517,19 @@ def test_srtm_payload_validation():
 def test_registry_lookup_and_listing():
     """Verify discovery and querying of registered adapters."""
     adapters = ScientificSourceRegistry.list_adapters()
-    assert len(adapters) == 4
+    assert len(adapters) == 5
     ids = [a.source_id for a in adapters]
     assert "chirps_daily" in ids
     assert "nasa_gpm_imerg" in ids
     assert "open_meteo_archive" in ids
+    assert "open_meteo_forecast" in ids
     assert "nasa_srtm_30m" in ids
 
     # Exact retrieval
     assert ScientificSourceRegistry.get_adapter("chirps_daily") is CHIRPSAdapter
     assert ScientificSourceRegistry.get_adapter("nasa_gpm_imerg") is GPMIMERGAdapter
     assert ScientificSourceRegistry.get_adapter("open_meteo_archive") is OpenMeteoAdapter
+    assert ScientificSourceRegistry.get_adapter("open_meteo_forecast") is OpenMeteoForecastAdapter
     assert ScientificSourceRegistry.get_adapter("nasa_srtm_30m") is SRTMAdapter
 
     # Unknown key raises KeyError
@@ -538,8 +541,9 @@ def test_registry_lookup_and_listing():
 async def test_registry_check_all_connections():
     """Verify aggregated parallel health auditing across all registered adapters."""
     report = await ScientificSourceRegistry.check_all_connections()
-    assert report["total_adapters"] == 4
+    assert report["total_adapters"] == 5
     assert "chirps_daily" in report["sources"]
     assert "nasa_gpm_imerg" in report["sources"]
     assert "open_meteo_archive" in report["sources"]
+    assert "open_meteo_forecast" in report["sources"]
     assert "nasa_srtm_30m" in report["sources"]

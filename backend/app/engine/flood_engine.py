@@ -47,7 +47,12 @@ class FloodRiskEngine:
     ) -> HazardAssessmentResponse:
         now_iso = datetime.now(timezone.utc).isoformat()
         is_demo = (mode == "demo")
-        data_mode: DataMode = "DEMONSTRATION" if is_demo else "CACHED_VERIFIED"
+        if mode == "live":
+            data_mode: DataMode = "LIVE_MODEL"
+        elif is_demo:
+            data_mode: DataMode = "DEMONSTRATION"
+        else:
+            data_mode: DataMode = "CACHED_VERIFIED"
 
         district_slug = district_info["id"].lower().replace("district-", "").strip()
         region_id = f"district-{district_slug}"
@@ -415,12 +420,29 @@ class FloodRiskEngine:
             ),
         ]
 
+        if mode == "live":
+            sources.insert(0, SourceMetadata(
+                source_id="open_meteo_forecast",
+                source_name="Open-Meteo Weather Forecast (NWP)",
+                spatial_resolution="0.25° (~25 km) ECMWF IFS / GFS Blend",
+                temporal_resolution="Hourly / Daily Aggregated",
+                dataset_version="Forecast API v1.0",
+                access_url="https://open-meteo.com/",
+                units="mm/day",
+                data_mode="LIVE_MODEL",
+                retrieval_timestamp=now_iso,
+                license="CC-BY 4.0 Open-Meteo",
+            ))
+
         scientific_notes = [
             "Rainfall accumulation alone does NOT compute water inundation or embankment breaching.",
             "River gauge levels and flood warnings are issued exclusively by Central Water Commission (CWC) and UPSDMA.",
             f"Mean elevation in {district_info['name']} is {mean_elev}m MSL with gentle gradient ({srtm_profile.get('slope_degrees_avg', 0.35)}°) in the {district_info['river_basin']}.",
             "All spatial aggregation is strictly bounded to validated Survey of India / OSM administrative polygon boundaries.",
         ]
+
+        if mode == "live":
+            scientific_notes.insert(0, "Live precipitation metrics are derived from Open-Meteo NWP representative-point estimates at district centroid.")
 
         loc_ref = LocationReference(
             location_id=district_info["id"],

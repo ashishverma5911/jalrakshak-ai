@@ -16,6 +16,7 @@ from .base import (
 from .chirps import CHIRPSAdapter
 from .gpm_imerg import GPMIMERGAdapter
 from .open_meteo import OpenMeteoAdapter
+from .open_meteo_forecast import OpenMeteoForecastAdapter
 from .srtm import SRTMAdapter
 
 logger = logging.getLogger("jalrakshak.pipeline.adapter.registry")
@@ -30,6 +31,7 @@ class ScientificSourceRegistry:
         "chirps_daily": CHIRPSAdapter,
         "nasa_gpm_imerg": GPMIMERGAdapter,
         "open_meteo_archive": OpenMeteoAdapter,
+        "open_meteo_forecast": OpenMeteoForecastAdapter,
         "nasa_srtm_30m": SRTMAdapter,
     }
 

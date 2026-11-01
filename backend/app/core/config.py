@@ -34,7 +34,16 @@ EARTHDATA_PASSWORD = os.getenv("EARTHDATA_PASSWORD", "")
 EARTHDATA_BEARER_TOKEN = os.getenv("EARTHDATA_BEARER_TOKEN", "")
 OPEN_METEO_API_KEY = os.getenv("OPEN_METEO_API_KEY", "")
 OPEN_METEO_ARCHIVE_URL = os.getenv("OPEN_METEO_ARCHIVE_URL", "https://archive-api.open-meteo.com/v1/archive")
+OPEN_METEO_FORECAST_URL = os.getenv("OPEN_METEO_FORECAST_URL", "https://api.open-meteo.com/v1/forecast")
 CHIRPS_BASE_URL = os.getenv("CHIRPS_BASE_URL", "https://data.chc.ucsb.edu/products/CHIRPS-2.0")
+
+# Phase 3A: Live Environmental Data Ingestion Settings
+# Default is False for strict backward compatibility until enabled
+LIVE_DATA_ENABLED = os.getenv("LIVE_DATA_ENABLED", "false").lower() in ("true", "1", "yes")
+LIVE_CACHE_TTL_HOURS = float(os.getenv("LIVE_CACHE_TTL_HOURS", "3.0"))
+LIVE_STALE_THRESHOLD_HOURS = float(os.getenv("LIVE_STALE_THRESHOLD_HOURS", "24.0"))
+LIVE_REQUEST_TIMEOUT_SECONDS = float(os.getenv("LIVE_REQUEST_TIMEOUT_SECONDS", "10.0"))
+LIVE_MAX_RETRIES = int(os.getenv("LIVE_MAX_RETRIES", "2"))
 
 # API Ingestion & Upload Security
 UPLOAD_API_KEY = os.getenv("UPLOAD_API_KEY", "").strip() or os.getenv("ADMIN_API_KEY", "").strip()

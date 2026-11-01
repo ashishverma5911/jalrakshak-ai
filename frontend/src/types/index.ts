@@ -96,7 +96,11 @@ export type DataMode =
   | 'DEMONSTRATION'
   | 'DATA_PENDING'
   | 'DATA_STALE'
-  | 'MANUAL_UPLOAD';
+  | 'LIVE_MODEL'
+  | 'PROVIDER_ERROR'
+  | 'MANUAL_UPLOAD'
+  | 'FORECAST'
+  | 'CACHED';
 
 export type DataClassification =
   | 'IN_SITU_GROUND_TRUTH'
@@ -117,3 +121,88 @@ export type ProcessingStage =
   | 'REJECTED'
   | 'UNSUPPORTED'
   | 'DATA_UNAVAILABLE';
+
+export interface HourlyEnvironmentalPoint {
+  timestamp: string;
+  precipitation_mm: number | null;
+  temperature_2m_c: number | null;
+  relative_humidity_pct: number | null;
+  wind_speed_10m_kmh: number | null;
+  et0_evapotranspiration_mm: number | null;
+  is_forecast: boolean;
+  quality_status: string;
+}
+
+export interface DailyAggregatedPrecipitation {
+  date: string;
+  rainfall_mm: number | null;
+  is_forecast: boolean;
+  hours_recorded: number;
+  hours_missing: number;
+  quality_status: string;
+}
+
+export interface CurrentEnvironmentalConditions {
+  timestamp: string;
+  temperature_2m_c?: number | null;
+  relative_humidity_pct?: number | null;
+  wind_speed_10m_kmh?: number | null;
+  precipitation_rate_mm_hr?: number | null;
+  et0_evapotranspiration_mm?: number | null;
+  is_forecast?: boolean;
+  condition_summary?: string | null;
+}
+
+export interface EnvironmentalDataFreshness {
+  latest_timestamp: string;
+  retrieval_timestamp: string;
+  data_age_hours: number;
+  cache_ttl_hours: number;
+  is_cached: boolean;
+  is_stale: boolean;
+  cache_expires_at?: string | null;
+}
+
+export interface EnvironmentalLiveResponse {
+  district_id: string;
+  district_name: string;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
+  spatial_representation: string;
+  spatial_disclaimer: string;
+  provider: string;
+  model_name: string;
+  attribution: string;
+  access_url: string;
+  data_mode: DataMode | string;
+  freshness: EnvironmentalDataFreshness;
+  current_conditions?: CurrentEnvironmentalConditions | null;
+  hourly_series: HourlyEnvironmentalPoint[];
+  daily_precipitation: DailyAggregatedPrecipitation[];
+  provider_status?: Record<string, any> | null;
+  scientific_notes: string[];
+}
+
+export interface EnvironmentalRefreshResponse {
+  success: boolean;
+  district_id: string;
+  status: string;
+  message: string;
+  refreshed_at: string;
+  cache_expires_at: string;
+  data_mode: string;
+}
+
+export interface EnvironmentalSystemStatusResponse {
+  feature_flag_enabled: boolean;
+  provider: string;
+  endpoint: string;
+  cache_ttl_hours: number;
+  stale_threshold_hours: number;
+  timeout_seconds: number;
+  max_retries: number;
+  active_cached_districts: string[];
+  provider_connection_status: string;
+}
