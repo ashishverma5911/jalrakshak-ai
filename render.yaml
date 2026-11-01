@@ -1,8 +1,8 @@
 # JalRakshak AI — Render Infrastructure as Code Blueprint
 # Zero-cost (₹0) Public Demonstration Architecture
 # Consisting of:
-# 1. Render Static Site: React 18 SPA (Free Tier)
-# 2. Render Web Service: FastAPI Python 3.9 ASGI Container (Free Tier)
+# 1. Backend: FastAPI Python 3.9 ASGI Container (Free Web Service)
+# 2. Frontend: React 18 SPA (Static Site backed by global CDN)
 
 services:
   # JalRakshak AI — Backend ASGI Web Service (Free Tier)
@@ -18,23 +18,25 @@ services:
         value: 10000
       - key: DEMO_MODE
         value: "true"
+      # Replace with your actual deployed frontend URL once assigned by Render
       - key: CORS_ORIGINS
-        value: "https://jalrakshak-frontend.onrender.com,http://localhost:5173"
+        value: "https://YOUR_FRONTEND_URL_HERE.onrender.com,http://localhost:5173"
       # Optional Gemma 4 AI Studio Key for neural explanation layer
       - key: GEMINI_API_KEY
         sync: false
     healthCheckPath: /api/v1/health
 
   # JalRakshak AI — Frontend React SPA Static Site (Free Tier)
-  - type: static
+  - type: web
     name: jalrakshak-frontend
+    runtime: static
+    rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
-    baseDir: frontend
-    plan: free
     envVars:
+      # Replace with your actual deployed backend URL once assigned by Render
       - key: VITE_API_BASE_URL
-        value: https://jalrakshak-api.onrender.com/api/v1
+        value: https://YOUR_BACKEND_URL_HERE.onrender.com/api/v1
     routes:
       - type: rewrite
         source: /*
