@@ -75,8 +75,12 @@ export const MainDashboardView: React.FC = () => {
       const loc = selectedLocation === 'all' ? 'gorakhpur' : selectedLocation;
       const res = await apiService.refreshEnvironmentalData(loc);
       setLiveRefreshMsg(res.message);
-      const updated = await apiService.fetchEnvironmentalLive(loc);
-      setLiveEnvironmental(updated);
+      if (res.data) {
+        setLiveEnvironmental(res.data);
+      } else {
+        const updated = await apiService.fetchEnvironmentalLive(loc);
+        setLiveEnvironmental(updated);
+      }
     } catch (err: any) {
       setLiveRefreshMsg(err?.message || 'Refresh failed');
     } finally {

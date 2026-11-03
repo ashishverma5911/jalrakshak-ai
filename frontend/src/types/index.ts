@@ -193,6 +193,7 @@ export interface EnvironmentalRefreshResponse {
   refreshed_at: string;
   cache_expires_at: string;
   data_mode: string;
+  data?: EnvironmentalLiveResponse;
 }
 
 export interface EnvironmentalSystemStatusResponse {
@@ -205,4 +206,7 @@ export interface EnvironmentalSystemStatusResponse {
   max_retries: number;
   active_cached_districts: string[];
   provider_connection_status: string;
+  provider_cooldown_active?: boolean;
+  cooldown_remaining_seconds?: number;
+  provider_cooldown_reason?: string | null;
 }

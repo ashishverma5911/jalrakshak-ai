@@ -86,6 +86,12 @@ def get_environmental_status() -> EnvironmentalSystemStatusResponse:
     """
     cached_districts = EnvironmentalCacheService.list_cached_districts()
     status = "online" if LIVE_DATA_ENABLED else "disabled_by_config"
+    cooldown_active = EnvironmentalCacheService.is_provider_in_cooldown()
+    cooldown_sec = EnvironmentalCacheService.get_cooldown_remaining_seconds()
+    cooldown_reason = EnvironmentalCacheService.get_cooldown_reason()
+
+    if LIVE_DATA_ENABLED and cooldown_active:
+        status = "rate_limited_cooldown"
 
     return EnvironmentalSystemStatusResponse(
         feature_flag_enabled=LIVE_DATA_ENABLED,
@@ -97,6 +103,9 @@ def get_environmental_status() -> EnvironmentalSystemStatusResponse:
         max_retries=LIVE_MAX_RETRIES,
         active_cached_districts=cached_districts,
         provider_connection_status=status,
+        provider_cooldown_active=cooldown_active,
+        cooldown_remaining_seconds=cooldown_sec,
+        provider_cooldown_reason=cooldown_reason,
     )
 
 
@@ -121,17 +130,26 @@ async def refresh_environmental_data(
             refreshed_at=now_iso,
             cache_expires_at=now_iso,
             data_mode="DATA_PENDING",
+            data=None,
         )
 
     res = await EnvironmentalCacheService.get_district_environmental_data(clean_id, force_refresh=True)
     is_success = res.data_mode in ["LIVE_MODEL", "CACHED"]
 
+    msg = "Live telemetry refreshed from Open-Meteo."
+    if not is_success:
+        if res.provider_status and "error" in res.provider_status:
+            msg = f"Provider unavailable: {res.provider_status['error']}"
+        else:
+            msg = "Provider unavailable; fallback active."
+
     return EnvironmentalRefreshResponse(
         success=is_success,
         district_id=clean_id,
         status="refreshed" if is_success else "provider_error",
-        message="Live telemetry refreshed from Open-Meteo." if is_success else "Provider unavailable; fallback active.",
+        message=msg,
         refreshed_at=res.freshness.retrieval_timestamp,
         cache_expires_at=res.freshness.cache_expires_at or now_iso,
         data_mode=res.data_mode,
+        data=res,
     )

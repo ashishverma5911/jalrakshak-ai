@@ -14,6 +14,8 @@ Scientific Transparency Notice:
 
 import asyncio
 import logging
+import random
+import email.utils
 from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime, timezone, date, timedelta
 import httpx
@@ -29,6 +31,7 @@ from .base import (
     AdapterPayloadError,
     DistrictIsolationError,
     AdapterConnectionError,
+    AdapterRateLimitError,
 )
 from ...core.config import (
     OPEN_METEO_FORECAST_URL,
@@ -167,6 +170,32 @@ class OpenMeteoForecastAdapter(ScientificSourceAdapter):
 
         return result
 
+    @staticmethod
+    def _parse_retry_after(header_val: Optional[str]) -> Optional[int]:
+        """
+        Parses standard HTTP Retry-After header.
+        Supports both integer delta-seconds ('120') and RFC 2822 / 1123 HTTP date strings.
+        """
+        if not header_val:
+            return None
+        clean_val = header_val.strip()
+        # 1. Delta seconds
+        try:
+            sec = int(clean_val)
+            return max(1, sec)
+        except ValueError:
+            pass
+
+        # 2. HTTP date format (e.g., 'Wed, 21 Oct 2026 07:28:00 GMT')
+        try:
+            dt = email.utils.parsedate_to_datetime(clean_val)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            delta = (dt - datetime.now(timezone.utc)).total_seconds()
+            return max(1, int(delta))
+        except Exception:
+            return None
+
     @classmethod
     async def fetch_forecast_raw(
         cls,
@@ -179,7 +208,8 @@ class OpenMeteoForecastAdapter(ScientificSourceAdapter):
     ) -> Dict[str, Any]:
         """
         Executes bounded, resilient HTTP GET to Open-Meteo Forecast API.
-        Applies exponential backoff with strict max-retry caps.
+        Applies exponential backoff with randomized jitter for transient errors.
+        Immediately halts and raises AdapterRateLimitError on HTTP 429 without retries.
         """
         timeout = timeout_seconds or LIVE_REQUEST_TIMEOUT_SECONDS
         retries = max_retries if max_retries is not None else LIVE_MAX_RETRIES
@@ -210,7 +240,40 @@ class OpenMeteoForecastAdapter(ScientificSourceAdapter):
                             raise AdapterPayloadError(f"Failed to decode Open-Meteo JSON payload: {e}")
 
                     if resp.status_code == 429:
-                        raise AdapterConnectionError("Open-Meteo rate limit exceeded (HTTP 429).")
+                        # Extract Retry-After and rate limit headers
+                        retry_after_hdr = resp.headers.get("retry-after") or resp.headers.get("Retry-After")
+                        reset_hdr = resp.headers.get("x-ratelimit-reset") or resp.headers.get("X-RateLimit-Reset")
+
+                        retry_after_sec = None
+                        if retry_after_hdr:
+                            retry_after_sec = cls._parse_retry_after(retry_after_hdr)
+                        elif reset_hdr:
+                            try:
+                                r_val = float(reset_hdr)
+                                now_epoch = datetime.now(timezone.utc).timestamp()
+                                if r_val > now_epoch:
+                                    retry_after_sec = max(1, int(r_val - now_epoch))
+                                else:
+                                    retry_after_sec = max(1, int(r_val))
+                            except Exception:
+                                pass
+
+                        reason = None
+                        try:
+                            data = resp.json()
+                            if isinstance(data, dict):
+                                reason = data.get("reason")
+                        except Exception:
+                            pass
+
+                        err_msg = f"Open-Meteo rate limit exceeded (HTTP 429).{f' Reason: {reason}' if reason else ''}"
+                        # Immediately fail out of retry loop — do NOT retry HTTP 429
+                        raise AdapterRateLimitError(
+                            message=err_msg,
+                            retry_after_seconds=retry_after_sec,
+                            rate_limit_reset=int(reset_hdr) if reset_hdr and reset_hdr.isdigit() else None,
+                            reason=reason,
+                        )
 
                     if 500 <= resp.status_code < 600:
                         last_error = AdapterConnectionError(f"Open-Meteo server error (HTTP {resp.status_code}).")
@@ -221,7 +284,8 @@ class OpenMeteoForecastAdapter(ScientificSourceAdapter):
                 last_error = AdapterConnectionError(f"Open-Meteo network request failed: {type(exc).__name__}")
 
             if attempt < retries:
-                backoff = 0.5 * (2 ** attempt)
+                # Exponential backoff with randomized jitter
+                backoff = 0.5 * (2 ** attempt) + random.uniform(0.1, 0.4)
                 await asyncio.sleep(backoff)
 
         raise last_error or AdapterConnectionError("Failed to fetch Open-Meteo data after retries.")

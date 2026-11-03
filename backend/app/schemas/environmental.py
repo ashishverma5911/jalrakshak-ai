@@ -82,6 +82,7 @@ class EnvironmentalRefreshResponse(BaseModel):
     refreshed_at: str
     cache_expires_at: str
     data_mode: str
+    data: Optional[EnvironmentalLiveResponse] = None
 
 
 class EnvironmentalSystemStatusResponse(BaseModel):
@@ -94,3 +95,6 @@ class EnvironmentalSystemStatusResponse(BaseModel):
     max_retries: int
     active_cached_districts: List[str] = Field(default_factory=list)
     provider_connection_status: str
+    provider_cooldown_active: bool = False
+    cooldown_remaining_seconds: float = 0.0
+    provider_cooldown_reason: Optional[str] = None

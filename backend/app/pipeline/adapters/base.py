@@ -62,6 +62,21 @@ class AdapterConnectionError(AdapterError):
     pass
 
 
+class AdapterRateLimitError(AdapterConnectionError):
+    """Raised when remote data provider returns HTTP 429 Rate Limit Exceeded."""
+    def __init__(
+        self,
+        message: str = "Provider rate limit exceeded (HTTP 429).",
+        retry_after_seconds: Optional[int] = None,
+        rate_limit_reset: Optional[int] = None,
+        reason: Optional[str] = None,
+    ):
+        super().__init__(message)
+        self.retry_after_seconds = retry_after_seconds
+        self.rate_limit_reset = rate_limit_reset
+        self.reason = reason
+
+
 class AdapterAuthenticationError(AdapterError):
     """Raised when authentication credentials are required or rejected."""
     pass
