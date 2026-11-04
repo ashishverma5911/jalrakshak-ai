@@ -6,7 +6,7 @@
 > - **Gorakhpur**: Flood-risk intelligence (Rapti & Rohini River Basins, Eastern UP)
 > - **Mahoba**: Meteorological drought intelligence (Bundelkhand Plateau, Ken River Basin)
 >
-> **Status**: Verified Working Prototype (Phase 6 / Final Delivery).  
+> **Status**: Verified Working Prototype (Phase 3C / Production Ready).
 > **Decision-Support Notice**: JalRakshak is a decision-support and awareness tool, not an official forecasting authority or replacement for statutory emergency warnings issued by the India Meteorological Department (IMD), Central Water Commission (CWC), or the Uttar Pradesh State Disaster Management Authority (UPSDMA).
 
 ---
@@ -88,39 +88,47 @@
 |---|---|---|
 | `GET` | `/` | Root API status, pilot locations, and demo data disclosure |
 | `GET` | `/api/v1/health` | 4-tier diagnostic health reporting (FastAPI, Gemma 4, Freshness, Pipeline) |
-| `GET` | `/api/v1/sources` | Complete provenance registry for 4 satellite & reference feeds |
-| `GET` | `/api/v1/risk/flood` | Gorakhpur flood-risk indicators (7d/30d cumulative, anomaly, wet days) |
-| `GET` | `/api/v1/risk/drought` | Mahoba meteorological drought indicators (SPI-3, deficit %, dry days) |
+| `GET` | `/api/v1/sources` | Complete provenance registry for satellite, NWP, and reference feeds |
+| `GET` | `/api/v1/risk/flood` | Gorakhpur flood-risk indicators (7d/30d cumulative, anomaly, wet days, official alerts) |
+| `GET` | `/api/v1/risk/drought` | Mahoba meteorological drought indicators (SPI-3, deficit %, dry days, official alerts) |
 | `GET` | `/api/v1/dashboard` | Aggregated executive summary for Gorakhpur and Mahoba |
 | `GET` | `/api/v1/trends/rainfall` | Time-series rainfall with explicit missing vs zero distinction |
-| `GET` | `/api/v1/map/layers` | Centroid-based geospatial feature points with hazard levels |
-| `POST` | `/api/v1/assistant/chat` | Gemma 4 grounded explanation endpoint with injection defenses |
+| `GET` | `/api/v1/map/layers` | Geospatial feature points with hazard levels and centroid metadata |
+| `POST` | `/api/v1/assistant/chat` | Gemma 4 grounded explanation endpoint with prompt-injection defenses |
+| `GET` | `/api/v1/environmental/live` | Live Open-Meteo NWP forecast & hourly meteorological telemetry |
+| `GET` | `/api/v1/environmental/status` | Environmental telemetry cache status, TTL, and rate-limiting diagnostics |
+| `POST` | `/api/v1/environmental/refresh` | Manual telemetry cache refresh with 30s anti-spam cooldown protection |
+| `GET` | `/api/v1/regions` | Multi-district administrative hierarchy and onboarding registry |
+| `GET` | `/api/v1/regions/{region_id}` | District-specific administrative boundary geometry and terrain parameters |
+| `POST` | `/api/v1/uploads/precipitation` | Ingest user-provided CSV observations with automated quarantine checks |
+| `GET` | `/api/v1/uploads/history` | Audit log of validated and quarantined dataset uploads |
+| `POST` | `/api/v1/uploads/cleanup` | Administrative purge of expired quarantine upload artifacts |
 
 ---
 
 ## 5. Verification & Testing
 
-### Backend Test Suite (Pytest) — 37 Tests Passing
-Validates schema contracts, mathematical calculations, geometry disclaimers, timeout handling, safe error shielding, and prompt injection defenses:
+### Backend Test Suite (Pytest) — 245 Tests Passing
+Validates schema contracts, mathematical calculations, geometry disclaimers, timeout handling, safe error shielding, prompt injection defenses, live NWP caching, advisory validity, and risk completeness:
 ```bash
 PYTHONPATH=backend ./backend/venv/bin/pytest backend/tests -v
 ```
-**Result**: `37 passed in 0.83s` (100% pass rate).
+**Result**: `245 passed in 5.5s` (100% pass rate).
 
-### Frontend Test Suite (Vitest) — 26 Tests Passing
-Validates full user journey, keyboard navigation, chart filtering, offline fallback, export features, and error resilience:
+### Frontend Test Suite (Vitest) — 45 Tests Passing
+Validates full user journey, keyboard navigation, chart filtering, offline fallback, export features, live telemetry refresh, candidate district isolation, and error resilience:
 ```bash
-cd frontend && npm test -- --run
+export PATH="/Users/ashish/.local/node-v22/bin:$PATH" && cd frontend && npm test -- --run
 ```
-**Result**: `26 passed across 5 test suites in 1.55s` (100% pass rate).
+**Result**: `45 passed across 10 test suites in 2.6s` (100% pass rate).
 
-### Total Test Coverage: 63 Automated Tests (100% Passing)
+### Total Test Coverage: 290 Automated Tests (100% Passing)
 
 ### Production Build
 ```bash
-cd frontend && npm run build
+export PATH="/Users/ashish/.local/node-v22/bin:$PATH" && cd frontend && npm run build
 ```
-**Result**: Built cleanly in 1.29s with zero TypeScript compilation errors.
+**Result**: Built cleanly in 1.27s with zero TypeScript compilation errors.
 
 ---
 
@@ -182,14 +190,16 @@ docker-compose up --build
 - [x] Transparent deterministic fallback active when local Gemma runtime is offline
 - [x] Point centroid geometry disclaimer explicit (`geometry_status: "centroid_coordinates_only"`)
 - [x] Measured zero rainfall (`0.0 mm`) strictly differentiated from missing observation (`null`)
+- [x] Live Open-Meteo NWP ingestion with anti-rate-limit 3-hour caching and 30s cooldown
+- [x] Authoritative official alert validation with temporal boundary enforcement (UP SDMA / IMD)
+- [x] Historical replay semantics decoupling retrospective evaluations from live operational alerts
+- [x] Multi-district onboarding hierarchy with candidate district isolation (zero data bleed)
 - [x] Frontend builds cleanly with zero TypeScript compilation errors (`dist/` generated)
-- [x] 63 automated tests (37 backend + 26 frontend) passing completely
+- [x] 290 automated tests (245 backend + 45 frontend) passing completely (100% pass rate)
 
 ### Unverified / Operational Items (Requires Target Host Setup)
-- [ ] Live satellite streaming ingestion (current deployment operates on verified benchmark fixtures `is_demo_data: true`)
-- [ ] Dedicated SSL/TLS certificate termination on reverse proxy (Nginx / Cloudflare)
+- [ ] Dedicated SSL/TLS certificate termination on custom domain (managed via Render / Cloudflare)
 - [ ] Local GPU acceleration for Ollama neural model (runs on deterministic fallback when GPU daemon is offline)
-- [ ] District boundary GIS polygon shapefile integration (currently using official Survey of India centroid coordinates)
 
 ---
 
