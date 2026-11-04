@@ -90,7 +90,7 @@ export const DistrictRiskMap: React.FC<DistrictRiskMapProps> = ({
           </span>
           <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold ${
             dataMode === 'CACHED_VERIFIED'
-              ? 'bg-blue-50 text-blue-700 border border-blue-200'
+              ? 'bg-amber-50 text-amber-800 border border-amber-200'
               : dataMode === 'LIVE_MODEL'
               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
               : dataMode === 'DATA_PENDING'
@@ -98,9 +98,9 @@ export const DistrictRiskMap: React.FC<DistrictRiskMapProps> = ({
               : 'bg-amber-50 text-amber-800 border border-amber-200'
           }`}>
             {dataMode === 'CACHED_VERIFIED'
-              ? 'VERIFIED'
+              ? 'ILLUSTRATIVE CENTROIDS'
               : dataMode === 'LIVE_MODEL'
-              ? 'LIVE NWP'
+              ? 'LIVE NWP CENTROIDS'
               : dataMode === 'DATA_PENDING'
               ? 'DATA PENDING'
               : 'DEMO DATA'}
@@ -404,6 +404,9 @@ export const DistrictRiskMap: React.FC<DistrictRiskMapProps> = ({
                     ? `Drought: ${hoveredDistrict.droughtRisk}`
                     : `${hoveredDistrict.anomalyPct}% Anomaly`}
                 </span>
+              </div>
+              <div className="text-[9px] text-amber-700 font-medium">
+                Centroid Baseline • Illustrative Sample
               </div>
               <div className="text-[10px] text-slate-500 font-mono">
                 {hoveredDistrict.lat.toFixed(4)}°N, {hoveredDistrict.lng.toFixed(4)}°E

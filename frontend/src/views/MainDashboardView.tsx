@@ -54,18 +54,38 @@ export const MainDashboardView: React.FC = () => {
   const [, setIsLoading] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
     setIsLoading(true);
     const loc = selectedLocation === 'all' ? 'gorakhpur' : selectedLocation;
+
     apiService
       .fetchDashboard(loc, 'verified')
-      .then((data) => setBackendDashboard(data))
-      .catch(() => {})
-      .finally(() => setIsLoading(false));
+      .then((data) => {
+        if (isMounted) {
+          setBackendDashboard(data);
+        }
+      })
+      .catch((err) => {
+        console.warn('Dashboard verified fetch failed, using fallback:', err);
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
 
     apiService
       .fetchEnvironmentalLive(loc)
-      .then((data) => setLiveEnvironmental(data))
+      .then((data) => {
+        if (isMounted) {
+          setLiveEnvironmental(data);
+        }
+      })
       .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
   }, [selectedLocation]);
 
   const handleRefreshLive = async () => {
@@ -102,15 +122,38 @@ export const MainDashboardView: React.FC = () => {
   const gorakhpurData = UP_DISTRICTS_DATA.find((d) => d.id === 'gorakhpur')!;
   const mahobaData = UP_DISTRICTS_DATA.find((d) => d.id === 'mahoba')!;
 
-  const card1 = backendDashboard?.metric_cards?.[0];
-  const card2 = backendDashboard?.metric_cards?.[1];
-  const card3 = backendDashboard?.metric_cards?.[2];
-  const card4 = backendDashboard?.metric_cards?.[3];
-  const isBackendLoaded = backendDashboard !== null;
+  const isBackendLoaded =
+    backendDashboard !== null &&
+    Array.isArray(backendDashboard?.metric_cards) &&
+    backendDashboard.metric_cards.length >= 4;
+
+  const card1 = isBackendLoaded
+    ? backendDashboard.metric_cards.find((c) =>
+        c.title.toLowerCase().includes('current') || c.context_note.toLowerCase().includes('7-day')
+      ) || backendDashboard.metric_cards[0]
+    : undefined;
+
+  const card2 = isBackendLoaded
+    ? backendDashboard.metric_cards.find((c) =>
+        c.title.toLowerCase().includes('30-day') || c.context_note.toLowerCase().includes('30-day')
+      ) || backendDashboard.metric_cards[1]
+    : undefined;
+
+  const card3 = isBackendLoaded
+    ? backendDashboard.metric_cards.find((c) =>
+        c.title.toLowerCase().includes('90-day') || c.context_note.toLowerCase().includes('90-day')
+      ) || backendDashboard.metric_cards[2]
+    : undefined;
+
+  const card4 = isBackendLoaded
+    ? backendDashboard.metric_cards.find((c) =>
+        c.title.toLowerCase().includes('deficit') || c.title.toLowerCase().includes('seasonal')
+      ) || backendDashboard.metric_cards[3]
+    : undefined;
 
   // Card 1 values (Gorakhpur Current / 7d)
   const card1Val = isBackendLoaded
-    ? (card1 && card1.is_data_available && card1.value !== null ? card1.value.toFixed(1) : card1?.value === 0 ? '0.0' : '--')
+    ? (card1 && card1.is_data_available && card1.value !== null && card1.value !== undefined ? card1.value.toFixed(1) : card1?.value === 0 ? '0.0' : '--')
     : gorakhpurData.rainfall7dMm.toString();
   const card1Delta = isBackendLoaded
     ? (card1?.is_data_available && typeof card1?.delta_percentage === 'number' ? card1.delta_percentage : null)
@@ -121,7 +164,7 @@ export const MainDashboardView: React.FC = () => {
 
   // Card 2 values (Gorakhpur 30d Cumulative)
   const card2Val = isBackendLoaded
-    ? (card2 && card2.is_data_available && card2.value !== null ? card2.value.toFixed(1) : card2?.value === 0 ? '0.0' : '--')
+    ? (card2 && card2.is_data_available && card2.value !== null && card2.value !== undefined ? card2.value.toFixed(1) : card2?.value === 0 ? '0.0' : '--')
     : gorakhpurData.rainfall30dMm.toString();
   const card2Delta = isBackendLoaded
     ? (card2?.is_data_available && typeof card2?.delta_percentage === 'number' ? card2.delta_percentage : null)
@@ -132,7 +175,7 @@ export const MainDashboardView: React.FC = () => {
 
   // Card 3 values (Mahoba 90d)
   const card3Val = isBackendLoaded
-    ? (card3 && card3.is_data_available && card3.value !== null ? card3.value.toFixed(1) : card3?.value === 0 ? '0.0' : '--')
+    ? (card3 && card3.is_data_available && card3.value !== null && card3.value !== undefined ? card3.value.toFixed(1) : card3?.value === 0 ? '0.0' : '--')
     : mahobaData.rainfall90dMm.toString();
   const card3Delta = isBackendLoaded
     ? (card3?.is_data_available && typeof card3?.delta_percentage === 'number' ? card3.delta_percentage : null)
@@ -143,7 +186,7 @@ export const MainDashboardView: React.FC = () => {
 
   // Card 4 values (Mahoba Seasonal Deficit)
   const card4Val = isBackendLoaded
-    ? (card4 && card4.is_data_available && card4.value !== null ? `${card4.value > 0 ? '+' : ''}${card4.value.toFixed(1)}%` : '--%')
+    ? (card4 && card4.is_data_available && card4.value !== null && card4.value !== undefined ? `${card4.value > 0 ? '+' : ''}${card4.value.toFixed(1)}%` : '--%')
     : `${mahobaData.seasonalDeficitPct}%`;
   const card4Note = isBackendLoaded
     ? (card4?.context_note || 'Seasonal precipitation departure')
@@ -151,7 +194,11 @@ export const MainDashboardView: React.FC = () => {
 
   const activeProvenanceMode: DataMode = !isConfiguredPilot
     ? 'DATA_PENDING'
-    : (backendDashboard?.data_mode as DataMode) || (liveEnvironmental?.data_mode === 'LIVE_MODEL' ? 'LIVE_MODEL' : 'CACHED_VERIFIED');
+    : backendDashboard?.data_mode
+    ? (backendDashboard.data_mode as DataMode)
+    : liveEnvironmental?.data_mode === 'LIVE_MODEL'
+    ? 'LIVE_MODEL'
+    : 'DEMONSTRATION';
 
   const activeProvenanceSource = activeProvenanceMode === 'LIVE_MODEL'
     ? (liveEnvironmental?.model_name || 'Open-Meteo NWP ECMWF/GFS Blend')
