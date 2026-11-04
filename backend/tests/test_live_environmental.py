@@ -514,5 +514,17 @@ def test_drought_engine_mode_live():
     # Check indicator provenance category & quality status
     ind_map = {ind.indicator_id: ind for ind in eval_result.indicators}
     assert ind_map["drought_precip_90d_accum"].category == "model_derived"
-    assert ind_map["drought_precip_90d_accum"].quality_status == "provisional"
+    assert ind_map["drought_precip_90d_accum"].quality_status == "missing"
+    assert ind_map["drought_precip_90d_accum"].value is None
+    assert ind_map["drought_precip_90d_anomaly"].value is None
+    assert ind_map["drought_precip_90d_anomaly"].quality_status == "missing"
     assert "Open-Meteo" in ind_map["drought_precip_90d_accum"].dataset_version
+
+    # If full 90-day series is available in live mode, quality_status is provisional
+    dates_90d = pd.date_range(end="2026-10-28", periods=90, freq="D")
+    df_90d = pd.DataFrame({"date": dates_90d, "rainfall_mm": [1.0] * 90})
+    eval_90d = DroughtRiskEngine.evaluate(m_info, df_90d, reference_date="2026-10-28", mode="live")
+    ind_map_90d = {ind.indicator_id: ind for ind in eval_90d.indicators}
+    assert ind_map_90d["drought_precip_90d_accum"].category == "model_derived"
+    assert ind_map_90d["drought_precip_90d_accum"].quality_status == "provisional"
+    assert ind_map_90d["drought_precip_90d_accum"].value == 90.0

@@ -9,23 +9,41 @@ def calculate_cumulative_rainfall(
     reference_date: Optional[str] = None,
     date_col: str = "date",
     val_col: str = "rainfall_mm",
+    min_days: Optional[int] = None,
 ) -> Optional[float]:
     """
     Computes total cumulative rainfall (mm) over the last `window_days` preceding `reference_date`.
     Preserves genuine observed zero rainfall as 0.0.
     Returns None if dataset is empty or all observations in window are missing/null.
+    If `min_days` is specified, requires at least `min_days` distinct calendar days with
+    valid (non-null) rainfall observations in the window [reference_date - (window_days - 1), reference_date].
+    Missing days are not treated as zero rainfall.
     Excludes missing values from the summation.
     """
     if df.empty:
         return None
 
     df_sorted = df.sort_values(by=date_col).copy()
+    if not pd.api.types.is_datetime64_any_dtype(df_sorted[date_col]):
+        df_sorted[date_col] = pd.to_datetime(df_sorted[date_col])
+
     if reference_date:
         ref_dt = pd.to_datetime(reference_date)
         df_sorted = df_sorted[df_sorted[date_col] <= ref_dt]
+    else:
+        ref_dt = df_sorted[date_col].max()
 
     if df_sorted.empty:
         return None
+
+    if min_days is not None:
+        start_dt = ref_dt - pd.Timedelta(days=window_days - 1)
+        window_slice = df_sorted[(df_sorted[date_col] >= start_dt) & (df_sorted[date_col] <= ref_dt)]
+        valid_slice = window_slice[val_col].dropna()
+        valid_days = window_slice.dropna(subset=[val_col])[date_col].dt.date.nunique()
+        if valid_days < min_days:
+            return None
+        return round(float(valid_slice.sum()), 2)
 
     recent_slice = df_sorted.tail(window_days)
     valid_slice = recent_slice[val_col].dropna()

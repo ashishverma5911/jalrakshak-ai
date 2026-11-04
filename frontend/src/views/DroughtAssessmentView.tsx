@@ -56,9 +56,12 @@ export const DroughtAssessmentView: React.FC = () => {
     }
   }, [selectedLocation, isDroughtPilot]);
 
-  const r90d = backendData?.indicators.find((i) => i.indicator_id === 'mahoba_rain_90d')?.value ?? districtData.rainfall90dMm;
-  const anom90d = backendData?.indicators.find((i) => i.indicator_id === 'mahoba_anomaly_90d')?.value ?? districtData.anomalyPct;
-  const kharifDef = backendData?.indicators.find((i) => i.indicator_id === 'mahoba_kharif_deficit')?.value ?? districtData.seasonalDeficitPct;
+  const ind90d = backendData?.indicators.find((i) => i.indicator_id === 'drought_precip_90d_accum' || i.indicator_id === 'mahoba_rain_90d');
+  const r90d = ind90d !== undefined ? ind90d.value : districtData.rainfall90dMm;
+  const indAnom90d = backendData?.indicators.find((i) => i.indicator_id === 'drought_precip_90d_anomaly' || i.indicator_id === 'mahoba_anomaly_90d');
+  const anom90d = indAnom90d !== undefined ? indAnom90d.value : districtData.anomalyPct;
+  const indKharif = backendData?.indicators.find((i) => i.indicator_id === 'drought_seasonal_deficit' || i.indicator_id === 'mahoba_kharif_deficit');
+  const kharifDef = indKharif !== undefined ? indKharif.value : districtData.seasonalDeficitPct;
 
   return (
     <div className="space-y-6">
@@ -193,19 +196,36 @@ export const DroughtAssessmentView: React.FC = () => {
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-500 font-medium">90-Day Rainfall</span>
             {isDroughtPilot ? (
-              <span className="text-xs text-rose-600 font-bold">{typeof anom90d === 'number' ? anom90d.toFixed(1) : anom90d}% vs normal</span>
+              r90d === null || anom90d === null ? (
+                <span className="text-[10px] font-mono text-amber-800 bg-amber-100 px-2 py-0.5 rounded border border-amber-200">
+                  DATA UNAVAILABLE
+                </span>
+              ) : (
+                <span className="text-xs text-rose-600 font-bold">{typeof anom90d === 'number' ? anom90d.toFixed(1) : anom90d}% vs normal</span>
+              )
             ) : (
               <span className="text-[10px] font-mono text-slate-400">DATA PENDING</span>
             )}
           </div>
           <div className="mt-3">
             {isDroughtPilot ? (
-              <>
-                <div className="text-3xl font-black text-slate-900">
-                  {typeof r90d === 'number' ? r90d.toFixed(1) : r90d} <span className="text-sm font-semibold text-slate-500">mm</span>
-                </div>
-                <p className="text-[11px] text-amber-800 mt-1 font-medium">Accumulated CHIRPS precipitation</p>
-              </>
+              r90d === null ? (
+                <>
+                  <div className="text-3xl font-black text-slate-400">
+                    -- <span className="text-sm font-semibold text-slate-400">mm</span>
+                  </div>
+                  <p className="text-[11px] text-amber-800 mt-1 font-medium">
+                    90-day rainfall data unavailable — insufficient historical coverage
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="text-3xl font-black text-slate-900">
+                    {typeof r90d === 'number' ? r90d.toFixed(1) : r90d} <span className="text-sm font-semibold text-slate-500">mm</span>
+                  </div>
+                  <p className="text-[11px] text-amber-800 mt-1 font-medium">Accumulated precipitation</p>
+                </>
+              )
             ) : (
               <>
                 <div className="text-3xl font-black text-slate-400">-- <span className="text-sm font-semibold text-slate-400">mm</span></div>
@@ -220,17 +240,30 @@ export const DroughtAssessmentView: React.FC = () => {
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-500 font-medium">Seasonal Deficit</span>
             {isDroughtPilot ? (
-              <span className="text-xs text-rose-600 font-bold">Severe</span>
+              kharifDef === null ? (
+                <span className="text-[10px] font-mono text-amber-800 bg-amber-100 px-2 py-0.5 rounded border border-amber-200">
+                  DATA UNAVAILABLE
+                </span>
+              ) : (
+                <span className="text-xs text-rose-600 font-bold">Severe</span>
+              )
             ) : (
               <span className="text-[10px] font-mono text-slate-400">DATA PENDING</span>
             )}
           </div>
           <div className="mt-3">
             {isDroughtPilot ? (
-              <>
-                <div className="text-3xl font-black text-rose-600">{typeof kharifDef === 'number' ? kharifDef.toFixed(1) : kharifDef}%</div>
-                <p className="text-[11px] text-amber-800 mt-1 font-medium">Kharif / Monsoon departure</p>
-              </>
+              kharifDef === null ? (
+                <>
+                  <div className="text-3xl font-black text-slate-400">--%</div>
+                  <p className="text-[11px] text-amber-800 mt-1 font-medium">Monsoon departure data unavailable</p>
+                </>
+              ) : (
+                <>
+                  <div className="text-3xl font-black text-rose-600">{typeof kharifDef === 'number' ? kharifDef.toFixed(1) : kharifDef}%</div>
+                  <p className="text-[11px] text-amber-800 mt-1 font-medium">Kharif / Monsoon departure</p>
+                </>
+              )
             ) : (
               <>
                 <div className="text-3xl font-black text-slate-400">--%</div>

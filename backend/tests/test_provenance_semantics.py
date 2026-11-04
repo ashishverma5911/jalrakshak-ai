@@ -231,13 +231,14 @@ def test_hazard_engines_provenance_live_vs_verified():
     assert "open_meteo_forecast" in src_flood_live
     assert "nasa_gpm_imerg" not in src_flood_live  # Does not claim GPM in live mode
 
-    # 2. Drought Engine in Live Mode
+    # 2. Drought Engine in Live Mode (short-window returns null / missing)
     drought_live = DroughtRiskEngine.evaluate(m_info, daily_df, reference_date="2026-10-28", mode="live")
     ind_drought_live = {i.indicator_id: i for i in drought_live.indicators}
     src_drought_live = {s.source_id: s for s in drought_live.sources}
 
     assert ind_drought_live["drought_precip_90d_accum"].category == "model_derived"
-    assert ind_drought_live["drought_precip_90d_accum"].quality_status == "provisional"
+    assert ind_drought_live["drought_precip_90d_accum"].quality_status == "missing"
+    assert ind_drought_live["drought_precip_90d_accum"].value is None
     assert "Open-Meteo" in ind_drought_live["drought_precip_90d_accum"].dataset_version
     assert "open_meteo_forecast" in src_drought_live
 
@@ -254,13 +255,15 @@ def test_hazard_engines_provenance_live_vs_verified():
     assert "nasa_gpm_imerg" in src_flood_ver
     assert "chirps_daily" in src_flood_ver
 
-    # 4. Drought Engine in Verified Mode
-    drought_verified = DroughtRiskEngine.evaluate(m_info, daily_df, reference_date="2026-10-28", mode="verified")
+    # 4. Drought Engine in Verified Mode (with full 90-day verified data)
+    verified_df = ingestion.load_daily_rainfall("mahoba", mode="verified")
+    drought_verified = DroughtRiskEngine.evaluate(m_info, verified_df, reference_date="2026-10-28", mode="verified")
     ind_drought_ver = {i.indicator_id: i for i in drought_verified.indicators}
     src_drought_ver = {s.source_id: s for s in drought_verified.sources}
 
     assert ind_drought_ver["drought_precip_90d_accum"].category == "observed_measurement"
     assert ind_drought_ver["drought_precip_90d_accum"].quality_status == "verified"
+    assert ind_drought_ver["drought_precip_90d_accum"].value is not None
     assert "CHIRPS" in ind_drought_ver["drought_precip_90d_accum"].dataset_version
     assert "chirps_daily" in src_drought_ver
 

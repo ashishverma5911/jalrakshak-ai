@@ -62,10 +62,10 @@ class DroughtRiskEngine:
 
         # 1. 30-Day and 90-Day Cumulative Precipitation
         r_30d = calculate_cumulative_rainfall(daily_df, window_days=30, reference_date=reference_date)
-        r_90d = calculate_cumulative_rainfall(daily_df, window_days=90, reference_date=reference_date)
+        r_90d = calculate_cumulative_rainfall(daily_df, window_days=90, reference_date=reference_date, min_days=90)
 
         # Check for unlinked / missing telemetry in candidate districts or empty datasets
-        if r_90d is None or daily_df.empty or daily_df["rainfall_mm"].dropna().empty or not district_info.get("is_pilot", True):
+        if not district_info.get("is_pilot", True) or daily_df.empty or daily_df["rainfall_mm"].dropna().empty:
             pending_indicators = [
                 RiskIndicator(
                     indicator_id="drought_precip_90d_accum",
@@ -217,7 +217,7 @@ class DroughtRiskEngine:
         except Exception:
             baseline_90d = 453.6
 
-        anomaly_90d = calculate_rainfall_anomaly(r_90d, baseline_90d)
+        anomaly_90d = calculate_rainfall_anomaly(r_90d, baseline_90d) if r_90d is not None else None
 
         # 2. Kharif Monsoon Seasonal Departure (June to September accumulation)
         try:
@@ -232,14 +232,14 @@ class DroughtRiskEngine:
             (df_copy["date"].dt.month.isin([6, 7, 8, 9]))
         )
         monsoon_sub = df_copy[monsoon_mask]
-        observed_monsoon = float(monsoon_sub["rainfall_mm"].sum()) if not monsoon_sub.empty else r_90d
+        observed_monsoon = float(monsoon_sub["rainfall_mm"].sum()) if not monsoon_sub.empty else None
 
         try:
             baseline_monsoon = CHIRPSPipeline.get_district_monsoon_normal(region_id)
         except Exception:
             baseline_monsoon = 845.4  # Mahoba 1991-2020 monsoon normal
 
-        seasonal_deficit_pct = calculate_rainfall_anomaly(observed_monsoon, baseline_monsoon)
+        seasonal_deficit_pct = calculate_rainfall_anomaly(observed_monsoon, baseline_monsoon) if observed_monsoon is not None else None
 
         # 3. Maximum Consecutive Dry Spell Days (< 1.0 mm) and Dry Day Frequency (< 2.5 mm)
         dry_spell_days = calculate_max_consecutive_dry_days(
@@ -299,13 +299,21 @@ class DroughtRiskEngine:
             else "CHIRPS v2.0"
         )
         limitations_90d = (
-            "District representative-point estimate from Open-Meteo operational NWP model analysis (ECMWF IFS / GFS Blend). "
-            "Not an in-situ rain gauge or soil moisture measurement."
-            if is_live_mode
-            else "Spatial area-weighted sum over validated administrative polygon boundary."
+            "90-day rainfall data unavailable — insufficient historical coverage in live model cache."
+            if (is_live_mode and r_90d is None)
+            else (
+                "District representative-point estimate from Open-Meteo operational NWP model analysis (ECMWF IFS / GFS Blend). "
+                "Not an in-situ rain gauge or soil moisture measurement."
+                if is_live_mode
+                else (
+                    "90-day rainfall data unavailable — insufficient observation coverage."
+                    if r_90d is None
+                    else "Spatial area-weighted sum over validated administrative polygon boundary."
+                )
+            )
         )
         precip_quality_status: DataQualityStatus = (
-            "provisional" if is_live_mode else "verified"
+            "missing" if r_90d is None else ("provisional" if is_live_mode else "verified")
         )
 
         # Construct Indicators List
@@ -327,6 +335,7 @@ class DroughtRiskEngine:
                 methodology_version="v2.0-scientific",
                 limitations=limitations_90d,
                 is_demo_data=is_demo,
+                is_data_available=(r_90d is not None),
             ),
             RiskIndicator(
                 indicator_id="drought_precip_90d_anomaly",
@@ -338,13 +347,14 @@ class DroughtRiskEngine:
                 reference_baseline="30-Year Climatological Baseline (1991–2020 Normals)",
                 observation_timestamp=reference_date,
                 retrieval_timestamp=now_iso,
-                quality_status="verified",
+                quality_status="missing" if anomaly_90d is None else ("provisional" if is_live_mode else "verified"),
                 data_mode=data_mode,
                 dataset_version="CHIRPS v2.0 Climatology",
                 spatial_resolution="0.05° (~5.3 km)",
                 methodology_version="v2.0-scientific",
-                limitations="Negative departure indicates acute meteorological precipitation shortfall.",
+                limitations="90-day departure uncalculated due to insufficient observation coverage in calculation window." if anomaly_90d is None else "Negative departure indicates acute meteorological precipitation shortfall.",
                 is_demo_data=is_demo,
+                is_data_available=(anomaly_90d is not None),
             ),
             RiskIndicator(
                 indicator_id="drought_seasonal_deficit",
@@ -356,13 +366,14 @@ class DroughtRiskEngine:
                 reference_baseline=f"30-Year Monsoon Normal: {baseline_monsoon} mm",
                 observation_timestamp=reference_date,
                 retrieval_timestamp=now_iso,
-                quality_status="verified",
+                quality_status="missing" if seasonal_deficit_pct is None else "verified",
                 data_mode=data_mode,
                 dataset_version="1991–2020 IMD Normals",
                 spatial_resolution="District Administrative Unit",
                 methodology_version="v2.0-scientific",
-                limitations="IMD classifies departures beyond -59% as Large Deficient / Scanty rainfall.",
+                limitations="Monsoon departure uncalculated due to absence of June-September observations in calculation window." if seasonal_deficit_pct is None else "IMD classifies departures beyond -59% as Large Deficient / Scanty rainfall.",
                 is_demo_data=is_demo,
+                is_data_available=(seasonal_deficit_pct is not None),
             ),
             RiskIndicator(
                 indicator_id="drought_spi_3",
@@ -381,24 +392,26 @@ class DroughtRiskEngine:
                 methodology_version="v2.0-scientific",
                 limitations="Measures meteorological deficit. Does not substitute for field ground-survey crop cutting.",
                 is_demo_data=is_demo,
+                is_data_available=(spi_val is not None),
             ),
             RiskIndicator(
                 indicator_id="drought_consecutive_dry_days",
                 name="Consecutive Dry Spell Days",
-                value=float(dry_spell_days),
+                value=float(dry_spell_days) if dry_spell_days is not None else None,
                 units="days",
                 category="derived_indicator",
                 calculation_window="Last 60 days (< 1.0mm/day)",
                 reference_baseline="IMD Dry Spell criterion",
                 observation_timestamp=reference_date,
                 retrieval_timestamp=now_iso,
-                quality_status="verified",
+                quality_status="missing" if dry_spell_days is None else "verified",
                 data_mode=data_mode,
                 dataset_version="IMD Operational Criteria",
                 spatial_resolution="District Boundary",
                 methodology_version="v2.0-scientific",
                 limitations="Consecutive dry spell duration accelerates agricultural topsoil desiccation.",
                 is_demo_data=is_demo,
+                is_data_available=(dry_spell_days is not None),
             ),
             RiskIndicator(
                 indicator_id="drought_dry_day_frequency",
@@ -520,6 +533,8 @@ class DroughtRiskEngine:
 
         if mode == "live":
             scientific_notes.insert(0, "Live precipitation and ET0 metrics are derived from Open-Meteo NWP representative-point estimates at district centroid.")
+            if r_90d is None:
+                scientific_notes.insert(1, "90-day cumulative rainfall and departure are unavailable in live mode due to insufficient historical coverage in the operational NWP cache (requires 90 calendar days).")
 
         loc_ref = LocationReference(
             location_id=district_info["id"],
