@@ -76,11 +76,15 @@ export const FloodAssessmentView: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Demo Data Disclaimer */}
+      {/* Data Provenance Disclaimer */}
       <div className="px-3.5 py-1.5 rounded-xl bg-sky-50 border border-sky-200 text-[11px] text-sky-800 flex items-center justify-between shadow-sm">
         <div className="flex items-center space-x-2">
           <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-          <span>{DEMO_DATA_DISCLAIMER}</span>
+          <span>
+            {backendData && !backendData.is_demo_data
+              ? (backendData.disclaimer || 'JalRakshak AI Decision-Support System: Grounded in validated observational baselines. Not an official statutory forecasting authority.')
+              : DEMO_DATA_DISCLAIMER}
+          </span>
         </div>
         <span className="font-mono text-blue-700 font-semibold">
           {isFloodPilot ? 'PILOT: GORAKHPUR' : `CANDIDATE: ${activeLocationData.name.toUpperCase()}`}

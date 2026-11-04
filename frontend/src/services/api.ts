@@ -395,24 +395,24 @@ async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise
 }
 
 export const apiService = {
-  fetchDashboard: (location: string = 'gorakhpur'): Promise<DashboardOverviewResponse> => {
-    return apiFetch<DashboardOverviewResponse>(`/dashboard?location=${encodeURIComponent(location)}`);
+  fetchDashboard: (location: string = 'gorakhpur', mode: string = 'verified'): Promise<DashboardOverviewResponse> => {
+    return apiFetch<DashboardOverviewResponse>(`/dashboard?location=${encodeURIComponent(location)}&mode=${encodeURIComponent(mode)}`);
   },
 
-  fetchFloodRisk: (location: string = 'gorakhpur', days: number = 7): Promise<HazardAssessmentResponse> => {
-    return apiFetch<HazardAssessmentResponse>(`/risk/flood?location=${encodeURIComponent(location)}&days=${days}`);
+  fetchFloodRisk: (location: string = 'gorakhpur', days: number = 7, mode: string = 'verified'): Promise<HazardAssessmentResponse> => {
+    return apiFetch<HazardAssessmentResponse>(`/risk/flood?location=${encodeURIComponent(location)}&days=${days}&mode=${encodeURIComponent(mode)}`);
   },
 
-  fetchDroughtRisk: (location: string = 'mahoba'): Promise<HazardAssessmentResponse> => {
-    return apiFetch<HazardAssessmentResponse>(`/risk/drought?location=${encodeURIComponent(location)}`);
+  fetchDroughtRisk: (location: string = 'mahoba', mode: string = 'verified'): Promise<HazardAssessmentResponse> => {
+    return apiFetch<HazardAssessmentResponse>(`/risk/drought?location=${encodeURIComponent(location)}&mode=${encodeURIComponent(mode)}`);
   },
 
-  fetchRainfallTrends: (location: string = 'gorakhpur', range: string = '30d'): Promise<RainfallTrendsResponse> => {
-    return apiFetch<RainfallTrendsResponse>(`/trends/rainfall?location=${encodeURIComponent(location)}&range=${encodeURIComponent(range)}`);
+  fetchRainfallTrends: (location: string = 'gorakhpur', range: string = '30d', mode: string = 'verified'): Promise<RainfallTrendsResponse> => {
+    return apiFetch<RainfallTrendsResponse>(`/trends/rainfall?location=${encodeURIComponent(location)}&range=${encodeURIComponent(range)}&mode=${encodeURIComponent(mode)}`);
   },
 
-  fetchMapLayers: (hazard: string = 'all'): Promise<MapLayersResponse> => {
-    return apiFetch<MapLayersResponse>(`/map/layers?hazard=${encodeURIComponent(hazard)}`);
+  fetchMapLayers: (hazard: string = 'all', mode: string = 'verified'): Promise<MapLayersResponse> => {
+    return apiFetch<MapLayersResponse>(`/map/layers?layer=${encodeURIComponent(hazard)}&mode=${encodeURIComponent(mode)}`);
   },
 
   fetchSources: (): Promise<SourceMetadata[]> => {

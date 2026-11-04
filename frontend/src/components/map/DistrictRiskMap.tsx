@@ -24,6 +24,7 @@ export const DistrictRiskMap: React.FC<DistrictRiskMapProps> = ({
     activeMapLayer,
     setActiveMapLayer,
     selectedLocation,
+    dataMode,
   } = useApp();
 
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -87,8 +88,22 @@ export const DistrictRiskMap: React.FC<DistrictRiskMapProps> = ({
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-mono hidden sm:inline">
             77°E–85°E • 24°N–31°N
           </span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 font-mono font-semibold">
-            DEMO DATA
+          <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-semibold ${
+            dataMode === 'CACHED_VERIFIED'
+              ? 'bg-blue-50 text-blue-700 border border-blue-200'
+              : dataMode === 'LIVE_MODEL'
+              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+              : dataMode === 'DATA_PENDING'
+              ? 'bg-slate-50 text-slate-600 border border-slate-200'
+              : 'bg-amber-50 text-amber-800 border border-amber-200'
+          }`}>
+            {dataMode === 'CACHED_VERIFIED'
+              ? 'VERIFIED'
+              : dataMode === 'LIVE_MODEL'
+              ? 'LIVE NWP'
+              : dataMode === 'DATA_PENDING'
+              ? 'DATA PENDING'
+              : 'DEMO DATA'}
           </span>
         </div>
 

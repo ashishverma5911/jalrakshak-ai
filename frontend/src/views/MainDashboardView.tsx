@@ -21,6 +21,7 @@ import {
   Activity,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import type { DataMode } from '../types';
 import { Card } from '../components/common/Card';
 import { DistrictRiskMap } from '../components/map/DistrictRiskMap';
 import { RainfallChart, RainfallDataPoint } from '../components/charts/RainfallChart';
@@ -56,7 +57,7 @@ export const MainDashboardView: React.FC = () => {
     setIsLoading(true);
     const loc = selectedLocation === 'all' ? 'gorakhpur' : selectedLocation;
     apiService
-      .fetchDashboard(loc)
+      .fetchDashboard(loc, 'verified')
       .then((data) => setBackendDashboard(data))
       .catch(() => {})
       .finally(() => setIsLoading(false));
@@ -81,6 +82,8 @@ export const MainDashboardView: React.FC = () => {
         const updated = await apiService.fetchEnvironmentalLive(loc);
         setLiveEnvironmental(updated);
       }
+      const updatedDash = await apiService.fetchDashboard(loc, 'verified');
+      setBackendDashboard(updatedDash);
     } catch (err: any) {
       setLiveRefreshMsg(err?.message || 'Refresh failed');
     } finally {
@@ -99,6 +102,71 @@ export const MainDashboardView: React.FC = () => {
   const gorakhpurData = UP_DISTRICTS_DATA.find((d) => d.id === 'gorakhpur')!;
   const mahobaData = UP_DISTRICTS_DATA.find((d) => d.id === 'mahoba')!;
 
+  const card1 = backendDashboard?.metric_cards?.[0];
+  const card2 = backendDashboard?.metric_cards?.[1];
+  const card3 = backendDashboard?.metric_cards?.[2];
+  const card4 = backendDashboard?.metric_cards?.[3];
+  const isBackendLoaded = backendDashboard !== null;
+
+  // Card 1 values (Gorakhpur Current / 7d)
+  const card1Val = isBackendLoaded
+    ? (card1 && card1.is_data_available && card1.value !== null ? card1.value.toFixed(1) : card1?.value === 0 ? '0.0' : '--')
+    : gorakhpurData.rainfall7dMm.toString();
+  const card1Delta = isBackendLoaded
+    ? (card1?.is_data_available && typeof card1?.delta_percentage === 'number' ? card1.delta_percentage : null)
+    : gorakhpurData.anomalyPct;
+  const card1Note = isBackendLoaded
+    ? (card1?.context_note || '7-day cumulative rainfall volume')
+    : 'Illustrative development fixture';
+
+  // Card 2 values (Gorakhpur 30d Cumulative)
+  const card2Val = isBackendLoaded
+    ? (card2 && card2.is_data_available && card2.value !== null ? card2.value.toFixed(1) : card2?.value === 0 ? '0.0' : '--')
+    : gorakhpurData.rainfall30dMm.toString();
+  const card2Delta = isBackendLoaded
+    ? (card2?.is_data_available && typeof card2?.delta_percentage === 'number' ? card2.delta_percentage : null)
+    : 48;
+  const card2Note = isBackendLoaded
+    ? (card2?.context_note || '30-day cumulative precipitation volume')
+    : 'Illustrative development fixture';
+
+  // Card 3 values (Mahoba 90d)
+  const card3Val = isBackendLoaded
+    ? (card3 && card3.is_data_available && card3.value !== null ? card3.value.toFixed(1) : card3?.value === 0 ? '0.0' : '--')
+    : mahobaData.rainfall90dMm.toString();
+  const card3Delta = isBackendLoaded
+    ? (card3?.is_data_available && typeof card3?.delta_percentage === 'number' ? card3.delta_percentage : null)
+    : mahobaData.anomalyPct;
+  const card3Note = isBackendLoaded
+    ? (card3?.context_note || '90-day rainfall volume')
+    : 'Illustrative development fixture';
+
+  // Card 4 values (Mahoba Seasonal Deficit)
+  const card4Val = isBackendLoaded
+    ? (card4 && card4.is_data_available && card4.value !== null ? `${card4.value > 0 ? '+' : ''}${card4.value.toFixed(1)}%` : '--%')
+    : `${mahobaData.seasonalDeficitPct}%`;
+  const card4Note = isBackendLoaded
+    ? (card4?.context_note || 'Seasonal precipitation departure')
+    : 'Illustrative development fixture';
+
+  const activeProvenanceMode: DataMode = !isConfiguredPilot
+    ? 'DATA_PENDING'
+    : (backendDashboard?.data_mode as DataMode) || (liveEnvironmental?.data_mode === 'LIVE_MODEL' ? 'LIVE_MODEL' : 'CACHED_VERIFIED');
+
+  const activeProvenanceSource = activeProvenanceMode === 'LIVE_MODEL'
+    ? (liveEnvironmental?.model_name || 'Open-Meteo NWP ECMWF/GFS Blend')
+    : activeProvenanceMode === 'CACHED_VERIFIED'
+    ? 'CHIRPS v2.0 & NASA GPM Late Run'
+    : activeProvenanceMode === 'DATA_PENDING'
+    ? 'Regional Hierarchy Registry'
+    : 'Calibrated Demonstration Fixtures';
+
+  const activeProvenanceResolution = activeProvenanceMode === 'LIVE_MODEL'
+    ? 'Representative Point at Centroid'
+    : activeProvenanceMode === 'CACHED_VERIFIED'
+    ? '0.05° (~5.3 km)'
+    : 'Administrative Boundary';
+
   let chartData: RainfallDataPoint[] = getFilteredRainfallData(trendDistrict, trendRange, 'daily');
   if (backendTrends?.series && backendTrends.series.length > 0) {
     chartData = backendTrends.series.map((pt) => ({
@@ -110,7 +178,7 @@ export const MainDashboardView: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* 0. Demo Data & State Notice Banner */}
+      {/* 0. Provenance & State Notice Banner */}
       {dataFreshnessMode === 'error' ? (
         <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-between text-xs text-rose-800 shadow-sm">
           <div className="flex items-center space-x-2.5">
@@ -145,13 +213,21 @@ export const MainDashboardView: React.FC = () => {
         <div className="px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-600">
           <div className="flex items-center space-x-2">
             <DataProvenanceBadge
-              mode={backendDashboard?.data_mode || (isConfiguredPilot ? 'CACHED_VERIFIED' : 'DATA_PENDING')}
-              source="CHIRPS v2.0 & NASA GPM Late Run"
-              datasetVersion="v2.0"
-              spatialResolution="0.05° (~5.3 km)"
+              mode={activeProvenanceMode}
+              source={activeProvenanceSource}
+              datasetVersion={activeProvenanceMode === 'LIVE_MODEL' ? 'Open-Meteo CC-BY 4.0' : 'v2.0'}
+              spatialResolution={activeProvenanceResolution}
             />
             <span className="hidden sm:inline">
-              <strong>Decision-Support Prototype:</strong> {DEMO_DATA_DISCLAIMER}
+              <strong>Decision-Support Prototype:</strong>{' '}
+              {backendDashboard?.disclaimer ||
+                (!isConfiguredPilot
+                  ? `Candidate district (${activeLocationData.name}). Observational ingestion pending onboarding. Zero data bleed enforced.`
+                  : activeProvenanceMode === 'LIVE_MODEL'
+                  ? 'Grounded in Open-Meteo NWP representative-point estimates & 30-year climatological baselines. Not an official statutory forecasting authority.'
+                  : activeProvenanceMode === 'CACHED_VERIFIED'
+                  ? 'Grounded in validated CHIRPS v2.0 & NASA GPM observational baselines. Not an official statutory forecasting authority.'
+                  : DEMO_DATA_DISCLAIMER)}
             </span>
           </div>
           <span className="font-mono text-blue-700 font-semibold hidden md:inline">Pilot: UP-2026</span>
@@ -423,30 +499,49 @@ export const MainDashboardView: React.FC = () => {
               <div className="w-11 h-11 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center">
                 <CloudRain className="w-6 h-6" />
               </div>
-              <button
-                className="w-7 h-7 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center group-hover:bg-sky-600 group-hover:text-white transition-all"
-                aria-label="View Gorakhpur Current Rainfall"
-              >
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex items-center space-x-1">
+                <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded ${
+                  isBackendLoaded
+                    ? (card1?.is_data_available ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-slate-100 text-slate-600 border border-slate-200')
+                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                }`}>
+                  {isBackendLoaded ? (card1?.is_data_available ? 'Verified' : 'Unavailable') : 'Illustrative'}
+                </span>
+                <button
+                  className="w-7 h-7 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center group-hover:bg-sky-600 group-hover:text-white transition-all"
+                  aria-label="View Gorakhpur Current Rainfall"
+                >
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
             <div className="mt-4">
-              <p className="text-xs text-slate-500 font-medium">Current Rainfall</p>
-              <p className="text-xs font-semibold text-sky-700">Gorakhpur</p>
+              <p className="text-xs text-slate-500 font-medium">{card1?.title || 'Current Rainfall'}</p>
+              <p className="text-xs font-semibold text-sky-700">{card1?.location || 'Gorakhpur'}</p>
               <div className="mt-1 flex items-baseline space-x-2">
                 <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
-                  {gorakhpurData.rainfall7dMm}
+                  {card1Val}
                 </span>
-                <span className="text-sm font-semibold text-slate-500">mm</span>
+                <span className="text-sm font-semibold text-slate-500">{card1?.units || 'mm'}</span>
               </div>
-              <div className="mt-2 flex items-center text-xs font-bold text-emerald-600">
-                <TrendingUp className="w-3.5 h-3.5 mr-1" />
-                <span>+{gorakhpurData.anomalyPct}% vs normal</span>
-              </div>
+              {typeof card1Delta === 'number' ? (
+                <div className={`mt-2 flex items-center text-xs font-bold ${
+                  card1Delta >= 0 ? 'text-emerald-600' : 'text-slate-600'
+                }`}>
+                  {card1Delta >= 0 ? (
+                    <TrendingUp className="w-3.5 h-3.5 mr-1" />
+                  ) : (
+                    <TrendingDown className="w-3.5 h-3.5 mr-1" />
+                  )}
+                  <span>{card1Delta > 0 ? `+${card1Delta}` : card1Delta}% vs normal</span>
+                </div>
+              ) : (
+                <p className="mt-2 text-xs text-slate-500 truncate">{card1Note}</p>
+              )}
             </div>
           </Card>
 
-          {/* Card 2: Gorakhpur 7-Day Rainfall */}
+          {/* Card 2: Gorakhpur 30-Day Cumulative Rainfall */}
           <Card
             variant="flood"
             hoverEffect
@@ -460,26 +555,45 @@ export const MainDashboardView: React.FC = () => {
               <div className="w-11 h-11 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
                 <Waves className="w-6 h-6" />
               </div>
-              <button
-                className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all"
-                aria-label="View Gorakhpur 7-Day Rainfall"
-              >
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex items-center space-x-1">
+                <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded ${
+                  isBackendLoaded
+                    ? (card2?.is_data_available ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-slate-100 text-slate-600 border border-slate-200')
+                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                }`}>
+                  {isBackendLoaded ? (card2?.is_data_available ? 'Verified' : 'Unavailable') : 'Illustrative'}
+                </span>
+                <button
+                  className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all"
+                  aria-label="View Gorakhpur 30-Day Cumulative Rainfall"
+                >
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
             <div className="mt-4">
-              <p className="text-xs text-slate-500 font-medium">7-Day Rainfall</p>
-              <p className="text-xs font-semibold text-blue-700">Gorakhpur</p>
+              <p className="text-xs text-slate-500 font-medium">{card2?.title || '30-Day Cumulative'}</p>
+              <p className="text-xs font-semibold text-blue-700">{card2?.location || 'Gorakhpur'}</p>
               <div className="mt-1 flex items-baseline space-x-2">
                 <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
-                  {gorakhpurData.rainfall30dMm}
+                  {card2Val}
                 </span>
-                <span className="text-sm font-semibold text-slate-500">mm</span>
+                <span className="text-sm font-semibold text-slate-500">{card2?.units || 'mm'}</span>
               </div>
-              <div className="mt-2 flex items-center text-xs font-bold text-emerald-600">
-                <TrendingUp className="w-3.5 h-3.5 mr-1" />
-                <span>+48% vs normal</span>
-              </div>
+              {typeof card2Delta === 'number' ? (
+                <div className={`mt-2 flex items-center text-xs font-bold ${
+                  card2Delta >= 0 ? 'text-emerald-600' : 'text-slate-600'
+                }`}>
+                  {card2Delta >= 0 ? (
+                    <TrendingUp className="w-3.5 h-3.5 mr-1" />
+                  ) : (
+                    <TrendingDown className="w-3.5 h-3.5 mr-1" />
+                  )}
+                  <span>{card2Delta > 0 ? `+${card2Delta}` : card2Delta}% vs normal</span>
+                </div>
+              ) : (
+                <p className="mt-2 text-xs text-slate-500 truncate">{card2Note}</p>
+              )}
             </div>
           </Card>
 
@@ -497,26 +611,47 @@ export const MainDashboardView: React.FC = () => {
               <div className="w-11 h-11 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
                 <Sun className="w-6 h-6" />
               </div>
-              <button
-                className="w-7 h-7 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition-all"
-                aria-label="View Mahoba 90-Day Rainfall"
-              >
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex items-center space-x-1">
+                <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded ${
+                  isBackendLoaded
+                    ? (card3?.is_data_available ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-slate-100 text-slate-600 border border-slate-200')
+                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                }`}>
+                  {isBackendLoaded ? (card3?.is_data_available ? 'Verified' : 'Unavailable') : 'Illustrative'}
+                </span>
+                <button
+                  className="w-7 h-7 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition-all"
+                  aria-label="View Mahoba 90-Day Rainfall"
+                >
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
             <div className="mt-4">
-              <p className="text-xs text-slate-500 font-medium">90-Day Rainfall</p>
-              <p className="text-xs font-semibold text-amber-700">Mahoba</p>
+              <p className="text-xs text-slate-500 font-medium">{card3?.title || '90-Day Rainfall'}</p>
+              <p className="text-xs font-semibold text-amber-700">{card3?.location || 'Mahoba'}</p>
               <div className="mt-1 flex items-baseline space-x-2">
                 <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
-                  {mahobaData.rainfall90dMm}
+                  {card3Val}
                 </span>
-                <span className="text-sm font-semibold text-slate-500">mm</span>
+                <span className="text-sm font-semibold text-slate-500">{card3?.units || 'mm'}</span>
               </div>
-              <div className="mt-2 flex items-center text-xs font-bold text-rose-600">
-                <TrendingDown className="w-3.5 h-3.5 mr-1" />
-                <span>{mahobaData.anomalyPct}% vs normal</span>
-              </div>
+              {typeof card3Delta === 'number' ? (
+                <div className={`mt-2 flex items-center text-xs font-bold ${
+                  card3Delta < 0 ? 'text-rose-600' : 'text-emerald-600'
+                }`}>
+                  {card3Delta < 0 ? (
+                    <TrendingDown className="w-3.5 h-3.5 mr-1" />
+                  ) : (
+                    <TrendingUp className="w-3.5 h-3.5 mr-1" />
+                  )}
+                  <span>{card3Delta > 0 ? `+${card3Delta}` : card3Delta}% vs normal</span>
+                </div>
+              ) : (
+                <div className="mt-2 flex items-center text-[11px] font-semibold text-amber-700">
+                  <span className="truncate">{card3Note}</span>
+                </div>
+              )}
             </div>
           </Card>
 
@@ -534,23 +669,34 @@ export const MainDashboardView: React.FC = () => {
               <div className="w-11 h-11 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center">
                 <Sprout className="w-6 h-6" />
               </div>
-              <button
-                className="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center group-hover:bg-orange-600 group-hover:text-white transition-all"
-                aria-label="View Mahoba Seasonal Deficit"
-              >
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex items-center space-x-1">
+                <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded ${
+                  isBackendLoaded
+                    ? (card4?.is_data_available ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-slate-100 text-slate-600 border border-slate-200')
+                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                }`}>
+                  {isBackendLoaded ? (card4?.is_data_available ? 'Verified' : 'Unavailable') : 'Illustrative'}
+                </span>
+                <button
+                  className="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center group-hover:bg-orange-600 group-hover:text-white transition-all"
+                  aria-label="View Mahoba Seasonal Deficit"
+                >
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
             <div className="mt-4">
-              <p className="text-xs text-slate-500 font-medium">Seasonal Deficit</p>
-              <p className="text-xs font-semibold text-orange-700">Mahoba</p>
+              <p className="text-xs text-slate-500 font-medium">{card4?.title || 'Seasonal Deficit'}</p>
+              <p className="text-xs font-semibold text-orange-700">{card4?.location || 'Mahoba'}</p>
               <div className="mt-1 flex items-baseline space-x-2">
-                <span className="text-3xl font-extrabold text-rose-600 tracking-tight">
-                  {mahobaData.seasonalDeficitPct}%
+                <span className={`text-3xl font-extrabold tracking-tight ${
+                  card4Val.includes('-') ? 'text-rose-600' : 'text-slate-900'
+                }`}>
+                  {card4Val}
                 </span>
               </div>
               <div className="mt-2 flex items-center text-xs font-semibold text-amber-800">
-                <span>Severe Bundelkhand deficit</span>
+                <span className="truncate">{card4Note}</span>
               </div>
             </div>
           </Card>

@@ -52,6 +52,15 @@ def get_dashboard_overview(
     # 4. Mahoba seasonal deficit
     r_def = next(i for i in drought_eval.indicators if i.indicator_id == "drought_seasonal_deficit")
 
+    # Dynamic indicator anomalies
+    r_7d_anom = next((i for i in flood_eval.indicators if i.indicator_id == "flood_precip_7d_anomaly"), None)
+    r_90d_anom = next((i for i in drought_eval.indicators if i.indicator_id == "drought_precip_90d_anomaly"), None)
+
+    delta_7d = r_7d_anom.value if (r_7d_anom and r_7d_anom.value is not None) else None
+    # Gorakhpur October monthly climatological baseline is 40.2 mm
+    delta_30d = round(((r_30d.value - 40.2) / 40.2) * 100.0, 1) if (r_30d.value is not None) else None
+    delta_90d = r_90d_anom.value if (r_90d_anom and r_90d_anom.value is not None) else None
+
     # If a specific candidate district is requested and not in pilot list
     if location and location.lower().strip() not in ["gorakhpur", "mahoba", "all", ""]:
         clean_loc = location.lower().strip()
@@ -116,32 +125,32 @@ def get_dashboard_overview(
                 location="Gorakhpur",
                 value=r_7d.value,
                 units="mm",
-                delta_percentage=65.0,
-                is_positive_delta=True,
+                delta_percentage=delta_7d,
+                is_positive_delta=(delta_7d >= 0) if delta_7d is not None else None,
                 hazard_type="flood",
-                context_note="7-day cumulative rainfall exceeding normal",
-                is_data_available=True,
+                context_note="7-day cumulative rainfall exceeding normal" if (delta_7d is not None and delta_7d > 0) else "7-day cumulative rainfall volume",
+                is_data_available=(r_7d.value is not None),
             ),
             QuickMetricCard(
-                title="7-Day Rainfall",
+                title="30-Day Cumulative",
                 location="Gorakhpur",
                 value=r_30d.value,
                 units="mm",
-                delta_percentage=48.0,
-                is_positive_delta=True,
+                delta_percentage=delta_30d,
+                is_positive_delta=(delta_30d >= 0) if delta_30d is not None else None,
                 hazard_type="flood",
                 context_note="30-day cumulative precipitation volume",
-                is_data_available=True,
+                is_data_available=(r_30d.value is not None),
             ),
             QuickMetricCard(
                 title="90-Day Rainfall",
                 location="Mahoba",
                 value=r_90d.value,
                 units="mm",
-                delta_percentage=None if r_90d.value is None else -58.0,
-                is_positive_delta=None if r_90d.value is None else False,
+                delta_percentage=delta_90d,
+                is_positive_delta=(delta_90d >= 0) if delta_90d is not None else None,
                 hazard_type="drought",
-                context_note=r_90d.limitations if r_90d.value is None else "90-day rainfall anomaly below historical median",
+                context_note=r_90d.limitations if r_90d.value is None else ("90-day rainfall anomaly below historical median" if (delta_90d is not None and delta_90d < 0) else "90-day cumulative rainfall volume"),
                 is_data_available=(r_90d.value is not None),
             ),
             QuickMetricCard(
@@ -150,15 +159,20 @@ def get_dashboard_overview(
                 value=r_def.value,
                 units="percentage",
                 delta_percentage=r_def.value,
-                is_positive_delta=None if r_def.value is None else False,
+                is_positive_delta=(r_def.value >= 0) if r_def.value is not None else None,
                 hazard_type="drought",
-                context_note=r_def.limitations if r_def.value is None else "Severe monsoon deficit in Bundelkhand plateau",
+                context_note=r_def.limitations if r_def.value is None else ("Severe monsoon deficit in Bundelkhand plateau" if (r_def.value is not None and r_def.value < 0) else "Seasonal precipitation departure"),
                 is_data_available=(r_def.value is not None),
             ),
         ]
         dash_title = "JalRakshak Environmental Intelligence"
-        data_status = "verified"
-        disclaimer_text = "Prototype decision-support output. Connect live backend for real measurements."
+        data_status = "verified" if mode == "verified" else ("live" if mode == "live" else "demonstration")
+        if mode == "live":
+            disclaimer_text = "JalRakshak AI Decision-Support System. Grounded in Open-Meteo NWP representative-point estimates & 30-year climatological baselines. Not an official statutory forecasting authority."
+        elif mode == "verified":
+            disclaimer_text = "JalRakshak AI Decision-Support System. Grounded in validated CHIRPS v2.0 & NASA GPM observational baselines. Not an official statutory forecasting authority."
+        else:
+            disclaimer_text = "JalRakshak AI Decision-Support Prototype. Grounded in calibrated historical demonstration fixtures. Connect live backend for verified measurements."
 
     pilot_locations = [
         LocationReference(
