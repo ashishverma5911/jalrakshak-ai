@@ -699,7 +699,7 @@ class EnvironmentalCacheService:
                 wind_speed_10m_kmh=r.get("wind_speed_10m_kmh"),
                 et0_evapotranspiration_mm=r.get("et0_evapotranspiration_mm"),
                 is_forecast=r.get("is_forecast", False),
-                quality_status=r.get("quality_status", "observed_estimate"),
+                quality_status=r.get("quality_status", "historical_model_estimate"),
             )
             for r in hourly_records
         ]
@@ -711,7 +711,7 @@ class EnvironmentalCacheService:
                 is_forecast=d.get("is_forecast", False),
                 hours_recorded=d.get("hours_recorded", 24),
                 hours_missing=d.get("hours_missing", 0),
-                quality_status=d.get("quality_status", "observed_estimate"),
+                quality_status=d.get("quality_status", "historical_model_estimate"),
             )
             for d in daily_records
         ]
@@ -719,7 +719,7 @@ class EnvironmentalCacheService:
         notes = [
             "Source: Open-Meteo ECMWF IFS / GFS Blended Numerical Weather Prediction.",
             "District representative-point estimate at district centroid coordinates. Not a spatial polygon average.",
-            "Precipitation metrics distinguish model-derived near-current estimates from future forecasts.",
+            "Precipitation metrics distinguish archived NWP model analysis (historical_model_estimate), current nowcast (live_model_estimate), and forward forecasts (forecast).",
             "Missing observations are retained as null; never silently imputed or coerced to zero.",
         ]
         if is_stale:

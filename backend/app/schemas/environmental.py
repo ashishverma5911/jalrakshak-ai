@@ -1,6 +1,6 @@
 """
-Pydantic Schemas for Live Environmental Data Integration (Phase 3A)
-Provides typed contracts for Open-Meteo NWP observations, forecasts,
+Pydantic Schemas for Live Environmental Data Integration (Phase 3A/3C)
+Provides typed contracts for Open-Meteo NWP model estimates, forecasts,
 freshness metrics, and district representative point telemetry.
 """
 
@@ -19,7 +19,7 @@ class HourlyEnvironmentalPoint(BaseModel):
     wind_speed_10m_kmh: Optional[float] = Field(None, description="Wind speed at 10m in km/h")
     et0_evapotranspiration_mm: Optional[float] = Field(None, description="Reference FAO-56 evapotranspiration in mm")
     is_forecast: bool = Field(False, description="True if timestamp is in the future relative to retrieval")
-    quality_status: DataQualityStatus = Field("observed_estimate", description="Validation and quality classification")
+    quality_status: DataQualityStatus = Field("historical_model_estimate", description="Validation and quality classification")
 
 
 class DailyAggregatedPrecipitation(BaseModel):
@@ -28,7 +28,7 @@ class DailyAggregatedPrecipitation(BaseModel):
     is_forecast: bool = Field(False, description="True if aggregated from forecast hours")
     hours_recorded: int = Field(24, description="Number of valid hourly records in the day")
     hours_missing: int = Field(0, description="Number of missing hours in the day")
-    quality_status: DataQualityStatus = Field("observed_estimate", description="Validation status")
+    quality_status: DataQualityStatus = Field("historical_model_estimate", description="Validation status")
 
 
 class CurrentEnvironmentalConditions(BaseModel):

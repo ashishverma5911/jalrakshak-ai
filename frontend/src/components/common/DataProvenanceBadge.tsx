@@ -34,7 +34,27 @@ export const DataProvenanceBadge: React.FC<DataProvenanceBadgeProps> = ({
   let dotColor = 'bg-cyan-400';
   let icon = <ShieldCheck className="w-3.5 h-3.5 mr-1 text-cyan-400" />;
 
-  if (cleanMode === 'LIVE_MODEL' || cleanMode.includes('LIVE_MODEL')) {
+  if (cleanMode === 'HISTORICAL_MODEL_ESTIMATE' || cleanMode.includes('HISTORICAL_MODEL')) {
+    label = 'HISTORICAL MODEL ESTIMATE';
+    badgeStyle = 'bg-sky-500/15 text-sky-300 border-sky-500/30 hover:bg-sky-500/25';
+    dotColor = 'bg-sky-400';
+    icon = <Database className="w-3.5 h-3.5 mr-1 text-sky-400" />;
+  } else if (cleanMode === 'LIVE_MODEL_ESTIMATE' || cleanMode.includes('LIVE_MODEL_ESTIMATE')) {
+    label = 'LIVE MODEL ESTIMATE';
+    badgeStyle = 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25';
+    dotColor = 'bg-emerald-400 animate-pulse';
+    icon = <Activity className="w-3.5 h-3.5 mr-1 text-emerald-400" />;
+  } else if (cleanMode === 'MIXED_MODEL_ESTIMATE' || cleanMode.includes('MIXED_MODEL')) {
+    label = 'MIXED MODEL ESTIMATE';
+    badgeStyle = 'bg-teal-500/15 text-teal-300 border-teal-500/30 hover:bg-teal-500/25';
+    dotColor = 'bg-teal-400';
+    icon = <Activity className="w-3.5 h-3.5 mr-1 text-teal-400" />;
+  } else if (cleanMode === 'MODEL_DERIVED' || cleanMode.includes('MODEL_DERIVED')) {
+    label = 'MODEL DERIVED';
+    badgeStyle = 'bg-blue-500/15 text-blue-300 border-blue-500/30 hover:bg-blue-500/25';
+    dotColor = 'bg-blue-400';
+    icon = <Activity className="w-3.5 h-3.5 mr-1 text-blue-400" />;
+  } else if (cleanMode === 'LIVE_MODEL' || cleanMode.includes('LIVE_MODEL')) {
     label = 'LIVE MODEL DATA';
     badgeStyle = 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25';
     dotColor = 'bg-emerald-400 animate-pulse';

@@ -35,6 +35,10 @@ export type DataMode =
   | 'PROVIDER_ERROR'
   | 'MANUAL_UPLOAD'
   | 'FORECAST'
+  | 'HISTORICAL_MODEL_ESTIMATE'
+  | 'LIVE_MODEL_ESTIMATE'
+  | 'MIXED_MODEL_ESTIMATE'
+  | 'MODEL_DERIVED'
   | 'CACHED';
 
 export interface SourceMetadata {
@@ -55,12 +59,22 @@ export interface RiskIndicator {
   name: string;
   value: number | null;
   units: string;
-  category: 'observed_measurement' | 'derived_indicator' | 'validated_model' | 'official_alert';
+  category: 'observed_measurement' | 'derived_indicator' | 'validated_model' | 'official_alert' | 'model_derived';
   calculation_window: string;
   reference_baseline: string;
   observation_timestamp: string;
   retrieval_timestamp: string;
-  quality_status: 'verified' | 'provisional' | 'stale' | 'missing' | 'simulated_demo';
+  quality_status:
+    | 'verified'
+    | 'provisional'
+    | 'stale'
+    | 'missing'
+    | 'simulated_demo'
+    | 'forecast'
+    | 'observed_estimate'
+    | 'historical_model_estimate'
+    | 'live_model_estimate'
+    | 'mixed_model_estimate';
   data_mode?: DataMode;
   dataset_version?: string;
   spatial_resolution?: string;

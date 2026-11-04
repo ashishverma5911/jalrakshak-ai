@@ -153,16 +153,27 @@ def test_hourly_validation_and_zero_vs_missing():
     r_zero = records[10]
     assert r_zero["precipitation_mm"] == 0.0
     assert r_zero["precipitation_mm"] is not None
+    assert r_zero["quality_status"] == "historical_model_estimate"
 
     # Check missing is preserved as None (never coerced to 0)
     r_missing = records[12]
     assert r_missing["precipitation_mm"] is None
+    assert r_missing["quality_status"] == "missing"
 
-    # Check forecast split
-    # Record at h=0 is 24 hours in past -> is_forecast == False
+    # Check temporal classification relative to UTC hour
+    # Record at h=0 is 24 hours in past -> is_forecast == False, historical_model_estimate
     assert records[0]["is_forecast"] is False
-    # Record at h=30 is in future -> is_forecast == True
+    assert records[0]["quality_status"] == "historical_model_estimate"
+    # Record at h=24 is the current hour -> is_forecast == False, live_model_estimate
+    assert records[24]["is_forecast"] is False
+    assert records[24]["quality_status"] == "live_model_estimate"
+    # Record at h=30 is in future -> is_forecast == True, forecast
     assert records[30]["is_forecast"] is True
+    assert records[30]["quality_status"] == "forecast"
+
+    # Verify no record carries the legacy/misleading observed_estimate
+    for r in records:
+        assert r["quality_status"] != "observed_estimate"
 
 
 def test_hourly_bounds_validation():
@@ -231,17 +242,19 @@ def test_hourly_to_daily_aggregation():
     daily = OpenMeteoForecastAdapter.aggregate_hourly_to_daily(records)
     assert len(daily) == 2
 
-    # Day 1
+    # Day 1: Pure historical day
     assert daily[0]["date"] == "2026-10-28"
     assert daily[0]["rainfall_mm"] == 24.0
     assert daily[0]["hours_recorded"] == 24
     assert daily[0]["is_forecast"] is False
+    assert daily[0]["quality_status"] == "historical_model_estimate"
 
     # Day 2: Missing data threshold enforced
     assert daily[1]["date"] == "2026-10-29"
     assert daily[1]["rainfall_mm"] is None
     assert daily[1]["hours_missing"] == 15
     assert daily[1]["is_forecast"] is True
+    assert daily[1]["quality_status"] == "missing"
 
 
 @pytest.mark.anyio
@@ -455,7 +468,7 @@ def test_ingestion_service_mode_live():
 
 
 def test_flood_engine_mode_live():
-    """Verify FloodRiskEngine produces LIVE_MODEL assessment with Open-Meteo attribution."""
+    """Verify FloodRiskEngine produces LIVE_MODEL assessment with Open-Meteo attribution and model_derived category."""
     ingestion = DataIngestionService()
     g_info = ingestion.get_district_info("gorakhpur")
 
@@ -469,11 +482,20 @@ def test_flood_engine_mode_live():
     assert eval_result.is_demo_data is False
     source_ids = [s.source_id for s in eval_result.sources]
     assert "open_meteo_forecast" in source_ids
+    assert "nasa_gpm_imerg" not in source_ids
     assert any("Open-Meteo" in note for note in eval_result.scientific_notes)
+
+    # Check indicator provenance category & quality status
+    ind_map = {ind.indicator_id: ind for ind in eval_result.indicators}
+    assert ind_map["flood_precip_7d_accum"].category == "model_derived"
+    assert ind_map["flood_precip_7d_accum"].quality_status == "provisional"
+    assert "Open-Meteo" in ind_map["flood_precip_7d_accum"].dataset_version
+    assert ind_map["flood_precip_30d_accum"].category == "model_derived"
+    assert ind_map["flood_precip_30d_accum"].quality_status == "provisional"
 
 
 def test_drought_engine_mode_live():
-    """Verify DroughtRiskEngine produces LIVE_MODEL assessment with Open-Meteo attribution."""
+    """Verify DroughtRiskEngine produces LIVE_MODEL assessment with Open-Meteo attribution and model_derived category."""
     ingestion = DataIngestionService()
     m_info = ingestion.get_district_info("mahoba")
 
@@ -487,3 +509,10 @@ def test_drought_engine_mode_live():
     assert eval_result.is_demo_data is False
     source_ids = [s.source_id for s in eval_result.sources]
     assert "open_meteo_forecast" in source_ids
+    assert "nasa_gpm_imerg" not in source_ids
+
+    # Check indicator provenance category & quality status
+    ind_map = {ind.indicator_id: ind for ind in eval_result.indicators}
+    assert ind_map["drought_precip_90d_accum"].category == "model_derived"
+    assert ind_map["drought_precip_90d_accum"].quality_status == "provisional"
+    assert "Open-Meteo" in ind_map["drought_precip_90d_accum"].dataset_version

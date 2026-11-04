@@ -327,6 +327,7 @@ class OpenMeteoForecastAdapter(ScientificSourceAdapter):
             raise AdapterPayloadError("Mismatch in lengths of Open-Meteo hourly variable arrays.")
 
         now_utc = retrieval_time or datetime.now(timezone.utc)
+        current_utc_hour = now_utc.replace(minute=0, second=0, microsecond=0)
         parsed_records: List[Dict[str, Any]] = []
 
         valid_precip_count = 0
@@ -343,15 +344,14 @@ class OpenMeteoForecastAdapter(ScientificSourceAdapter):
             except Exception as e:
                 raise AdapterPayloadError(f"Invalid timestamp '{t_raw}' at index {idx}: {e}")
 
-            # Forecast classification: future timestamps relative to retrieval are forecasts
-            is_forecast = dt > now_utc
+            # Temporal classification relative to current UTC hour boundary
+            is_forecast = dt > current_utc_hour
             if is_forecast:
                 forecast_count += 1
 
-            # 1. Precipitation bounds & missingness check
+            # 1. Precipitation bounds, missingness, and temporal quality classification
             p_val = precips[idx]
             clean_p: Optional[float] = None
-            q_status = "observed_estimate" if not is_forecast else "forecast"
 
             if p_val is None:
                 clean_p = None
@@ -368,6 +368,12 @@ class OpenMeteoForecastAdapter(ScientificSourceAdapter):
                     else:
                         clean_p = round(f_val, 2)
                         valid_precip_count += 1
+                        if dt < current_utc_hour:
+                            q_status = "historical_model_estimate"
+                        elif dt == current_utc_hour:
+                            q_status = "live_model_estimate"
+                        else:
+                            q_status = "forecast"
                 except (ValueError, TypeError):
                     clean_p = None
                     q_status = "missing"
@@ -453,16 +459,42 @@ class OpenMeteoForecastAdapter(ScientificSourceAdapter):
             valid_p_pts = [p["precipitation_mm"] for p in pts if p["precipitation_mm"] is not None]
             missing_hours = total_hours - len(valid_p_pts)
 
-            # Check if this entire day is in the forecast period (majority of hours forecast)
-            forecast_hours = sum(1 for p in pts if p.get("is_forecast", False))
-            is_forecast_day = forecast_hours > (total_hours / 2)
+            # Analyze temporal composition of hours
+            forecast_hours = sum(
+                1 for p in pts
+                if p.get("quality_status") == "forecast" or p.get("is_forecast", False)
+            )
+            historical_hours = sum(
+                1 for p in pts
+                if p.get("quality_status") == "historical_model_estimate"
+                or (not p.get("is_forecast", False) and p.get("quality_status") not in ["live_model_estimate", "forecast"])
+            )
+            live_hours = sum(
+                1 for p in pts
+                if p.get("quality_status") == "live_model_estimate"
+            )
 
             if len(valid_p_pts) >= min_hours_coverage:
                 daily_sum = round(sum(valid_p_pts), 2)
-                q_status = "forecast" if is_forecast_day else "observed_estimate"
+                # Defensible temporal aggregation rule:
+                # 1. Pure historical day (all valid hours are past model analysis)
+                if forecast_hours == 0 and live_hours == 0:
+                    q_status = "historical_model_estimate"
+                    is_forecast_day = False
+                # 2. Pure forecast day (all valid hours are forward forecasts)
+                elif historical_hours == 0 and live_hours == 0:
+                    q_status = "forecast"
+                    is_forecast_day = True
+                # 3. Mixed day (contains past/live hours alongside forward forecast hours)
+                # Must never be labeled as pure historical; marked as mixed_model_estimate
+                # and flagged is_forecast=True because 24h total incorporates unobserved forecast hours.
+                else:
+                    q_status = "mixed_model_estimate"
+                    is_forecast_day = True
             else:
                 daily_sum = None
                 q_status = "missing"
+                is_forecast_day = forecast_hours > (total_hours / 2)
 
             daily_summaries.append({
                 "date": d.isoformat(),

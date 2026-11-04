@@ -15,6 +15,7 @@ from ..schemas.common import (
     RiskIndicator,
     SourceMetadata,
     DataMode,
+    DataQualityStatus,
 )
 from ..pipeline.chirps_pipeline import CHIRPSPipeline
 from ..pipeline.srtm_pipeline import SRTMElevationPipeline
@@ -287,6 +288,26 @@ class DroughtRiskEngine:
         else:
             risk_level = "low"
 
+        # Indicator provenance variables based on operational mode
+        is_live_mode = (mode == "live")
+        precip_category: Literal["observed_measurement", "model_derived"] = (
+            "model_derived" if is_live_mode else "observed_measurement"
+        )
+        version_90d = (
+            "Open-Meteo Forecast API v1.0 (ECMWF IFS / GFS Blend)"
+            if is_live_mode
+            else "CHIRPS v2.0"
+        )
+        limitations_90d = (
+            "District representative-point estimate from Open-Meteo operational NWP model analysis (ECMWF IFS / GFS Blend). "
+            "Not an in-situ rain gauge or soil moisture measurement."
+            if is_live_mode
+            else "Spatial area-weighted sum over validated administrative polygon boundary."
+        )
+        precip_quality_status: DataQualityStatus = (
+            "provisional" if is_live_mode else "verified"
+        )
+
         # Construct Indicators List
         indicators: List[RiskIndicator] = [
             RiskIndicator(
@@ -294,17 +315,17 @@ class DroughtRiskEngine:
                 name="90-Day Cumulative Rainfall",
                 value=r_90d,
                 units="mm",
-                category="observed_measurement",
+                category=precip_category,
                 calculation_window="90 days (ending 28 Oct 2026)",
                 reference_baseline=f"Historical normal: {baseline_90d} mm",
                 observation_timestamp=reference_date,
                 retrieval_timestamp=now_iso,
-                quality_status="verified",
+                quality_status=precip_quality_status,
                 data_mode=data_mode,
-                dataset_version="CHIRPS v2.0",
-                spatial_resolution="0.05° (~5.3 km)",
+                dataset_version=version_90d,
+                spatial_resolution="0.1° (~11 km) Representative Point" if is_live_mode else "0.05° (~5.3 km)",
                 methodology_version="v2.0-scientific",
-                limitations="Spatial area-weighted sum over validated administrative polygon boundary.",
+                limitations=limitations_90d,
                 is_demo_data=is_demo,
             ),
             RiskIndicator(
@@ -399,58 +420,96 @@ class DroughtRiskEngine:
             ),
         ]
 
-        sources: List[SourceMetadata] = [
-            SourceMetadata(
-                source_id="chirps_daily",
-                source_name="CHIRPS Daily Station Blended",
-                spatial_resolution="0.05° (~5.3 km)",
-                temporal_resolution="Daily",
-                dataset_version="v2.0",
-                access_url="https://www.chc.ucsb.edu/data/chirps",
-                units="mm/day",
-                data_mode=data_mode,
-                retrieval_timestamp=now_iso,
-                license="Creative Commons Public Domain",
-            ),
-            SourceMetadata(
-                source_id="srtm_dem",
-                source_name="NASA SRTM 30m Digital Elevation Model",
-                spatial_resolution="1 arc-second (~30 meters)",
-                temporal_resolution="Static benchmark",
-                dataset_version="v3.0 void-filled",
-                access_url="https://earthexplorer.usgs.gov/",
-                units="meters above MSL",
-                data_mode=data_mode,
-                retrieval_timestamp=now_iso,
-                license="NASA Open Public Domain",
-            ),
-            SourceMetadata(
-                source_id="upsdma_imd",
-                source_name="Manual for Drought Management / UPSDMA",
-                spatial_resolution="District Administrative Level",
-                temporal_resolution="Seasonal / Weekly",
-                dataset_version="National Drought Manual 2020",
-                access_url="https://upsdma.up.nic.in/",
-                units="Standardized Criteria",
-                data_mode=data_mode,
-                retrieval_timestamp=now_iso,
-                license="Government Open Data License (GODL)",
-            ),
-        ]
-
-        if mode == "live":
-            sources.insert(0, SourceMetadata(
-                source_id="open_meteo_forecast",
-                source_name="Open-Meteo Weather Forecast (NWP)",
-                spatial_resolution="0.25° (~25 km) ECMWF IFS / GFS Blend",
-                temporal_resolution="Hourly / Daily Aggregated",
-                dataset_version="Forecast API v1.0",
-                access_url="https://open-meteo.com/",
-                units="mm/day",
-                data_mode="LIVE_MODEL",
-                retrieval_timestamp=now_iso,
-                license="CC-BY 4.0 Open-Meteo",
-            ))
+        if is_live_mode:
+            sources: List[SourceMetadata] = [
+                SourceMetadata(
+                    source_id="open_meteo_forecast",
+                    source_name="Open-Meteo Weather Forecast (NWP)",
+                    spatial_resolution="0.1° (~11 km) ECMWF IFS / GFS Blend Representative Point",
+                    temporal_resolution="Hourly / Daily Aggregated",
+                    dataset_version="Forecast API v1.0",
+                    access_url="https://open-meteo.com/",
+                    units="mm/day",
+                    data_mode="LIVE_MODEL",
+                    retrieval_timestamp=now_iso,
+                    license="CC-BY 4.0 Open-Meteo",
+                ),
+                SourceMetadata(
+                    source_id="chirps_climatology",
+                    source_name="CHIRPS 30-Year Climatological Baseline (1991–2020 Normals)",
+                    spatial_resolution="0.05° (~5.3 km)",
+                    temporal_resolution="30-Year Monthly Climatology",
+                    dataset_version="v2.0 Climatology",
+                    access_url="https://www.chc.ucsb.edu/data/chirps",
+                    units="mm/month",
+                    data_mode="CACHED_VERIFIED",
+                    retrieval_timestamp=now_iso,
+                    license="Creative Commons Public Domain",
+                ),
+                SourceMetadata(
+                    source_id="srtm_dem",
+                    source_name="NASA SRTM 30m Digital Elevation Model",
+                    spatial_resolution="1 arc-second (~30 meters)",
+                    temporal_resolution="Static benchmark",
+                    dataset_version="v3.0 void-filled",
+                    access_url="https://earthexplorer.usgs.gov/",
+                    units="meters above MSL",
+                    data_mode="CACHED_VERIFIED",
+                    retrieval_timestamp=now_iso,
+                    license="NASA Open Public Domain",
+                ),
+                SourceMetadata(
+                    source_id="upsdma_imd",
+                    source_name="Manual for Drought Management / UPSDMA",
+                    spatial_resolution="District Administrative Level",
+                    temporal_resolution="Seasonal / Weekly",
+                    dataset_version="National Drought Manual 2020",
+                    access_url="https://upsdma.up.nic.in/",
+                    units="Standardized Criteria",
+                    data_mode="LIVE_VERIFIED",
+                    retrieval_timestamp=now_iso,
+                    license="Government Open Data License (GODL)",
+                ),
+            ]
+        else:
+            sources: List[SourceMetadata] = [
+                SourceMetadata(
+                    source_id="chirps_daily",
+                    source_name="CHIRPS Daily Station Blended",
+                    spatial_resolution="0.05° (~5.3 km)",
+                    temporal_resolution="Daily",
+                    dataset_version="v2.0",
+                    access_url="https://www.chc.ucsb.edu/data/chirps",
+                    units="mm/day",
+                    data_mode=data_mode,
+                    retrieval_timestamp=now_iso,
+                    license="Creative Commons Public Domain",
+                ),
+                SourceMetadata(
+                    source_id="srtm_dem",
+                    source_name="NASA SRTM 30m Digital Elevation Model",
+                    spatial_resolution="1 arc-second (~30 meters)",
+                    temporal_resolution="Static benchmark",
+                    dataset_version="v3.0 void-filled",
+                    access_url="https://earthexplorer.usgs.gov/",
+                    units="meters above MSL",
+                    data_mode=data_mode,
+                    retrieval_timestamp=now_iso,
+                    license="NASA Open Public Domain",
+                ),
+                SourceMetadata(
+                    source_id="upsdma_imd",
+                    source_name="Manual for Drought Management / UPSDMA",
+                    spatial_resolution="District Administrative Level",
+                    temporal_resolution="Seasonal / Weekly",
+                    dataset_version="National Drought Manual 2020",
+                    access_url="https://upsdma.up.nic.in/",
+                    units="Standardized Criteria",
+                    data_mode=data_mode,
+                    retrieval_timestamp=now_iso,
+                    license="Government Open Data License (GODL)",
+                ),
+            ]
 
         scientific_notes = [
             "Meteorological drought does not equate to confirmed agricultural crop loss without ground crop-cutting surveys.",
