@@ -14,7 +14,8 @@ ingestion_service = DataIngestionService()
 def get_flood_risk(
     location: str = Query("gorakhpur", description="Target district identifier (e.g. gorakhpur)"),
     reference_date: str = Query("2026-10-28", description="Evaluation anchor date (YYYY-MM-DD)"),
-    mode: str = Query("demo", description="Data mode: 'demo' (prototype fixtures), 'verified' (genuine observations), or 'live' (Open-Meteo forecast)")
+    mode: str = Query("demo", description="Data mode: 'demo' (prototype fixtures), 'verified' (genuine observations), or 'live' (Open-Meteo forecast)"),
+    assessment_timestamp: Optional[str] = Query(None, description="Assessment execution timestamp (ISO 8601 or YYYY-MM-DD). Defaults to current time.")
 ) -> HazardAssessmentResponse:
     """
     Computes flood-related meteorological accumulation and terrain indicators for the specified district.
@@ -27,4 +28,10 @@ def get_flood_risk(
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-    return FloodRiskEngine.evaluate(district_info, daily_df, reference_date=reference_date, mode=mode)
+    return FloodRiskEngine.evaluate(
+        district_info,
+        daily_df,
+        reference_date=reference_date,
+        mode=mode,
+        assessment_timestamp=assessment_timestamp
+    )

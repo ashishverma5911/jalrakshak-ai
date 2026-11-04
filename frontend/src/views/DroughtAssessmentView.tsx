@@ -62,6 +62,11 @@ export const DroughtAssessmentView: React.FC = () => {
   const anom90d = indAnom90d !== undefined ? indAnom90d.value : districtData.anomalyPct;
   const indKharif = backendData?.indicators.find((i) => i.indicator_id === 'drought_seasonal_deficit' || i.indicator_id === 'mahoba_kharif_deficit');
   const kharifDef = indKharif !== undefined ? indKharif.value : districtData.seasonalDeficitPct;
+  const indSpi = backendData?.indicators.find((i) => i.indicator_id === 'drought_spi_3');
+  const spiVal = indSpi !== undefined ? indSpi.value : districtData.spi3;
+  const indDryDays = backendData?.indicators.find((i) => i.indicator_id === 'drought_consecutive_dry_days');
+  const dryDaysVal = indDryDays !== undefined ? indDryDays.value : 22;
+  const riskLevel = backendData?.risk_level || 'moderate';
 
   return (
     <div className="space-y-6">
@@ -75,6 +80,21 @@ export const DroughtAssessmentView: React.FC = () => {
           {isDroughtPilot ? 'PILOT: MAHOBA' : `CANDIDATE: ${activeLocationData.name.toUpperCase()}`}
         </span>
       </div>
+
+      {/* Historical Replay Banner */}
+      {backendData?.is_historical_replay && (
+        <div className="p-3 rounded-xl bg-purple-50 border border-purple-200 text-xs text-purple-900 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-sm">
+          <div className="flex items-center space-x-2">
+            <Info className="w-4 h-4 text-purple-600 shrink-0" />
+            <span>
+              <strong>Historical Replay:</strong> Evaluating retrospective conditions as of {backendData.assessment_timestamp ? backendData.assessment_timestamp.slice(0, 10) : 'requested timestamp'}. Official advisory expired on {backendData.official_advisory?.valid_to ? backendData.official_advisory.valid_to.slice(0, 10) : '31 Oct 2026'} and is <strong>INACTIVE</strong> operationally.
+            </span>
+          </div>
+          <span className="font-mono text-[10px] uppercase font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded border border-purple-300 shrink-0">
+            Historical Simulation
+          </span>
+        </div>
+      )}
 
       {/* Scope Alert when a candidate district or non-drought district is active */}
       {!isDroughtPilot && (
@@ -162,7 +182,11 @@ export const DroughtAssessmentView: React.FC = () => {
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-500 font-medium">Current Risk Level</span>
             {isDroughtPilot ? (
-              <Badge label="MODERATE" riskLevel="moderate" dot />
+              <Badge
+                label={riskLevel === 'pending' ? 'PENDING — INSUFFICIENT DATA' : riskLevel.toUpperCase()}
+                riskLevel={riskLevel === 'pending' || riskLevel === 'nodata' ? 'nodata' : riskLevel}
+                dot
+              />
             ) : (
               <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
                 Pending
@@ -172,13 +196,36 @@ export const DroughtAssessmentView: React.FC = () => {
           <div className="mt-3">
             {isDroughtPilot ? (
               <>
-                <div className="text-2xl font-black text-amber-700 flex items-center gap-1.5">
-                  <Flame className="w-6 h-6 text-amber-600" />
-                  <span>Moderate Risk</span>
+                <div className={`text-2xl font-black flex items-center gap-1.5 ${
+                  riskLevel === 'high' ? 'text-rose-700' : riskLevel === 'moderate' ? 'text-amber-700' : riskLevel === 'low' ? 'text-emerald-700' : 'text-slate-600'
+                }`}>
+                  <Flame className={`w-6 h-6 ${
+                    riskLevel === 'high' ? 'text-rose-600' : riskLevel === 'moderate' ? 'text-amber-600' : riskLevel === 'low' ? 'text-emerald-600' : 'text-slate-400'
+                  }`} />
+                  <span>
+                    {riskLevel === 'high' ? 'High Risk' : riskLevel === 'moderate' ? 'Moderate Risk' : riskLevel === 'low' ? 'Low Risk' : 'Pending — Insufficient Data'}
+                  </span>
                 </div>
-                <p className="text-[11px] text-slate-600 mt-1">
-                  Rainfall is below historical average for this period.
+                <p className="text-[11px] text-slate-600 mt-1 font-medium">
+                  {backendData?.primary_risk_driver || 'Rainfall is below historical average for this period.'}
                 </p>
+                {backendData?.official_advisory && (
+                  <div className="mt-2 flex flex-wrap gap-1.5 items-center">
+                    {backendData.is_historical_replay ? (
+                      <span className="text-[10px] font-semibold text-purple-900 bg-purple-50 border border-purple-200 rounded px-2 py-0.5 inline-block">
+                        Historical Simulation: {backendData.official_advisory.alert_level} Alert (Expired {backendData.official_advisory.valid_to ? backendData.official_advisory.valid_to.slice(0, 10) : ''} • INACTIVE)
+                      </span>
+                    ) : backendData.official_advisory.is_currently_active ? (
+                      <span className="text-[10px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-0.5 inline-block">
+                        Active Alert: {backendData.official_advisory.alert_level} ({backendData.official_advisory.bulletin_id || backendData.official_advisory.authority})
+                      </span>
+                    ) : backendData.official_advisory.bulletin_id ? (
+                      <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded px-2 py-0.5 inline-block">
+                        Advisory Expired ({backendData.official_advisory.valid_to ? backendData.official_advisory.valid_to.slice(0, 10) : '31 Oct 2026'})
+                      </span>
+                    ) : null}
+                  </div>
+                )}
               </>
             ) : (
               <>
@@ -394,24 +441,41 @@ export const DroughtAssessmentView: React.FC = () => {
                 <h3 className="text-sm font-bold text-slate-900 pb-3 border-b border-slate-100">
                   Monsoon Seasonal Deficit vs Normal (Bundelkhand)
                 </h3>
-                <div className="mt-3 p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3 text-xs text-slate-700">
-                  <div className="flex justify-between items-center py-1 border-b border-slate-200">
-                    <span className="text-slate-500">Kharif Normal Rainfall (10-Yr Baseline)</span>
-                    <span className="font-semibold text-slate-900">820 mm</span>
+                {r90d === null || backendData?.data_completeness === 'partial' ? (
+                  <div className="mt-3 p-4 rounded-xl bg-amber-50/60 border border-amber-200 space-y-2 text-xs">
+                    <div className="font-bold text-amber-900 flex items-center gap-1.5">
+                      <Info className="w-4 h-4 text-amber-700 shrink-0" />
+                      <span>90-Day Seasonal Comparison Unavailable in Live NWP Cache</span>
+                    </div>
+                    <p className="text-slate-700 leading-relaxed">
+                      Long-term 90-day rainfall accumulation and seasonal monsoon departure (-72% Kharif baseline) are unavailable in the live operational NWP model cache, which provides an antecedent 8-day rolling window.
+                    </p>
+                    <p className="text-slate-600 font-mono text-[11px]">
+                      Switch to verified CHIRPS observation mode to inspect calibrated 40-year historical monsoon departures.
+                    </p>
                   </div>
-                  <div className="flex justify-between items-center py-1 border-b border-slate-200">
-                    <span className="text-slate-500">2026 Observed Monsoon Inflow</span>
-                    <span className="font-semibold text-rose-600">230 mm (-72% Departure)</span>
+                ) : (
+                  <div className="mt-3 p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3 text-xs text-slate-700">
+                    <div className="flex justify-between items-center py-1 border-b border-slate-200">
+                      <span className="text-slate-500">Kharif Normal Rainfall (10-Yr Baseline)</span>
+                      <span className="font-semibold text-slate-900">820 mm</span>
+                    </div>
+                    <div className="flex justify-between items-center py-1 border-b border-slate-200">
+                      <span className="text-slate-500">Observed Monsoon Inflow</span>
+                      <span className="font-semibold text-rose-600">
+                        {typeof r90d === 'number' ? `${r90d.toFixed(1)} mm` : `${r90d} mm`} ({typeof kharifDef === 'number' ? `${kharifDef.toFixed(1)}%` : kharifDef}% Departure)
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center py-1 border-b border-slate-200">
+                      <span className="text-slate-500">Rainfall Category (IMD Standard)</span>
+                      <span className="font-semibold text-rose-600">Scanty / Large Deficient</span>
+                    </div>
+                    <div className="flex justify-between items-center py-1">
+                      <span className="text-slate-500">Aquifer Type</span>
+                      <span className="font-semibold text-amber-800">Crystalline Granite Fractures (Poor storage)</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center py-1 border-b border-slate-200">
-                    <span className="text-slate-500">Rainfall Category (IMD Standard)</span>
-                    <span className="font-semibold text-rose-600">Scanty / Large Deficient</span>
-                  </div>
-                  <div className="flex justify-between items-center py-1">
-                    <span className="text-slate-500">Aquifer Type</span>
-                    <span className="font-semibold text-amber-800">Crystalline Granite Fractures (Poor storage)</span>
-                  </div>
-                </div>
+                )}
               </Card>
             ) : (
               <Card variant="default">
@@ -434,13 +498,26 @@ export const DroughtAssessmentView: React.FC = () => {
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
                     <span className="text-slate-500 block mb-1">Standardized Precipitation Index (SPI-3)</span>
-                    <span className="text-lg font-black text-rose-600">{districtData.spi3} (Severely Dry)</span>
-                    <p className="text-[11px] text-slate-500 mt-1">Calculated over 90-day monsoon window.</p>
+                    {spiVal === null ? (
+                      <>
+                        <span className="text-base font-bold text-slate-400">-- (Unavailable in Live Cache)</span>
+                        <p className="text-[11px] text-amber-800 mt-1 font-medium">Requires multi-year monthly series (&gt;= 12 months). Live NWP cache contains 8 days.</p>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-lg font-black text-rose-600">
+                          {typeof spiVal === 'number' ? spiVal.toFixed(2) : spiVal} (Severely Dry)
+                        </span>
+                        <p className="text-[11px] text-slate-500 mt-1">Calculated over 90-day monsoon window.</p>
+                      </>
+                    )}
                   </div>
                   <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
                     <span className="text-slate-500 block mb-1">Consecutive Dry Spell Days</span>
-                    <span className="text-lg font-black text-amber-700">22 Days (&lt; 1 mm)</span>
-                    <p className="text-[11px] text-slate-500 mt-1">High evaporative demand in October.</p>
+                    <span className="text-lg font-black text-amber-700">
+                      {dryDaysVal !== null ? `${dryDaysVal} Days` : '--'} (&lt; 1 mm)
+                    </span>
+                    <p className="text-[11px] text-slate-500 mt-1">High evaporative demand in antecedent window.</p>
                   </div>
                   <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
                     <span className="text-slate-500 block mb-1">Soil Moisture Stress Proxy</span>
@@ -500,12 +577,34 @@ export const DroughtAssessmentView: React.FC = () => {
             </h3>
             {isDroughtPilot ? (
               <ul className="mt-3 text-xs text-slate-700 space-y-2.5 leading-relaxed">
+                {backendData?.primary_risk_driver && (
+                  <li className="flex items-start space-x-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-600 mt-1.5 shrink-0" />
+                    <span className="font-semibold text-slate-800">
+                      Primary Risk Driver: {backendData.primary_risk_driver}
+                    </span>
+                  </li>
+                )}
                 <li className="flex items-start space-x-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-rose-600 mt-1.5 shrink-0" />
                   <span>
-                    Rainfall is significantly below the historical average for this period ({districtData.anomalyPct}% anomaly).
+                    {r90d === null
+                      ? '90-day cumulative rainfall and climatological anomaly are unavailable in the live NWP cache.'
+                      : `Rainfall is significantly below the historical average for this period (${typeof anom90d === 'number' ? anom90d.toFixed(1) : anom90d}% anomaly).`}
                   </span>
                 </li>
+                {backendData?.official_advisory && (
+                  <li className="flex items-start space-x-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 shrink-0" />
+                    <span>
+                      {backendData.official_advisory.is_valid
+                        ? `Official Alert Active: ${backendData.official_advisory.authority} issued ${backendData.official_advisory.alert_level} Alert (Bulletin ${backendData.official_advisory.bulletin_id || 'N/A'}).`
+                        : backendData.official_advisory.bulletin_id
+                        ? `Official Alert Expired: Bulletin ${backendData.official_advisory.bulletin_id} expired on ${backendData.official_advisory.valid_to ? backendData.official_advisory.valid_to.slice(0, 10) : '31 Oct 2026'}.`
+                        : 'No active official government alerts for this region.'}
+                    </span>
+                  </li>
+                )}
                 <li className="flex items-start space-x-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-600 mt-1.5 shrink-0" />
                   <span>Prolonged dry conditions observed across the southern Bundelkhand belt.</span>
@@ -515,7 +614,7 @@ export const DroughtAssessmentView: React.FC = () => {
                   <span>Agricultural and water resources may experience stress during Rabi sowing.</span>
                 </li>
                 <li className="flex items-start space-x-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 shrink-0" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 mt-1.5 shrink-0" />
                   <span>Water conservation and efficient irrigation usage is strongly recommended.</span>
                 </li>
               </ul>

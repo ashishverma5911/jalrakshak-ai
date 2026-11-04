@@ -16,6 +16,8 @@ from ..schemas.common import (
     SourceMetadata,
     DataMode,
     DataQualityStatus,
+    DataCompleteness,
+    OfficialAdvisoryReference,
 )
 from ..pipeline.chirps_pipeline import CHIRPSPipeline
 from ..pipeline.srtm_pipeline import SRTMElevationPipeline
@@ -46,9 +48,13 @@ class DroughtRiskEngine:
         district_info: Dict[str, Any],
         daily_df: pd.DataFrame,
         reference_date: str = "2026-10-28",
-        mode: str = "demo"
+        mode: str = "demo",
+        assessment_timestamp: Optional[str] = None,
     ) -> HazardAssessmentResponse:
-        now_iso = datetime.now(timezone.utc).isoformat()
+        now_dt = datetime.now(timezone.utc)
+        now_iso = now_dt.isoformat()
+        assess_dt = OfficialAlertsPipeline.parse_utc_datetime(assessment_timestamp) if assessment_timestamp else now_dt
+        assess_iso = assess_dt.isoformat()
         is_demo = (mode == "demo")
         if mode == "live":
             data_mode: DataMode = "LIVE_MODEL"
@@ -63,6 +69,8 @@ class DroughtRiskEngine:
         # 1. 30-Day and 90-Day Cumulative Precipitation
         r_30d = calculate_cumulative_rainfall(daily_df, window_days=30, reference_date=reference_date)
         r_90d = calculate_cumulative_rainfall(daily_df, window_days=90, reference_date=reference_date, min_days=90)
+
+        is_historical_replay = bool(assessment_timestamp and assess_dt.date() < now_dt.date())
 
         # Check for unlinked / missing telemetry in candidate districts or empty datasets
         if not district_info.get("is_pilot", True) or daily_df.empty or daily_df["rainfall_mm"].dropna().empty:
@@ -197,8 +205,10 @@ class DroughtRiskEngine:
                 location=loc_ref,
                 hazard="drought",
                 risk_level="pending",
-                assessment_period="90-Day Seasonal Deficit & SPI-3 Window",
+                assessment_period="Data Ingestion Pending",
                 generated_at=now_iso,
+                assessment_timestamp=assess_iso,
+                is_historical_replay=is_historical_replay,
                 data_mode="DATA_PENDING",
                 is_demo_data=False,
                 is_data_available=False,
@@ -206,6 +216,20 @@ class DroughtRiskEngine:
                 indicators=pending_indicators,
                 sources=[],
                 scientific_notes=["Candidate district telemetry unlinked. Risk score is pending scientific ingestion."],
+                primary_risk_driver="Candidate district: observational telemetry unlinked",
+                data_completeness="pending",
+                official_advisory=OfficialAdvisoryReference(
+                    authority="IMD / UPSDMA",
+                    bulletin_id=None,
+                    alert_level="None",
+                    is_valid=False,
+                    is_currently_active=False,
+                    valid_from=None,
+                    valid_to=None,
+                    advisory_text="No live unauthenticated government alert feed integrated for this district.",
+                    status="data_pending",
+                    verification_status="data_pending",
+                ),
             )
 
         # Baseline: 30-year normal for Mahoba 90-day window (Aug-Oct normal ~ 453.6 mm)
@@ -232,7 +256,12 @@ class DroughtRiskEngine:
             (df_copy["date"].dt.month.isin([6, 7, 8, 9]))
         )
         monsoon_sub = df_copy[monsoon_mask]
-        observed_monsoon = float(monsoon_sub["rainfall_mm"].sum()) if not monsoon_sub.empty else None
+        # Require >= 100 days of monsoon coverage (out of 122 June-September days, ~82%)
+        # to ensure we don't calculate seasonal deficit from a small tail window (e.g. 2 days of September)
+        if len(monsoon_sub) >= 100:
+            observed_monsoon = float(monsoon_sub["rainfall_mm"].sum())
+        else:
+            observed_monsoon = None
 
         try:
             baseline_monsoon = CHIRPSPipeline.get_district_monsoon_normal(region_id)
@@ -275,18 +304,30 @@ class DroughtRiskEngine:
             mean_elev = float(district_info.get("elevation_m", 197.1))
             slope_avg = 2.85
 
-        # 6. Official Advisory from UPSDMA Drought Cell
-        official_adv = OfficialAlertsPipeline.get_district_official_alert(region_id)
-        alert_lvl = official_adv.get("alert_level", "Green")
+        # 6. Official Advisory from UPSDMA Drought Cell (evaluated at actual assessment timestamp)
+        official_adv = OfficialAlertsPipeline.validate_district_advisory(region_id, assessment_timestamp=assess_iso)
+        alert_lvl = official_adv.get("alert_level", "None")
+        is_adv_valid = bool(official_adv.get("is_valid", False))
+        is_currently_active = bool(official_adv.get("is_currently_active", False))
 
-        # 7. Transparent Risk Classification
-        # High Risk: SPI-3 <= -2.0 (Extremely Dry) OR seasonal deficit <= -60% OR official alert is Orange/Red
-        if (spi_val is not None and spi_val <= -2.0) or (seasonal_deficit_pct is not None and seasonal_deficit_pct <= -60.0) or alert_lvl in ["Red", "Orange"]:
+        # 7. Transparent Risk Classification Decision Logic:
+        # 1. Valid Orange/Red advisory -> high
+        # 2. Sufficient meteorological evidence meeting high threshold (SPI-3 <= -2.0 or deficit <= -60%) -> high
+        # 3. Evidence meeting moderate threshold (SPI-3 <= -1.2, deficit <= -35%, or independent dry_spell_days >= 25) -> moderate
+        # 4. Sufficient required meteorological evidence establishing normal conditions -> low
+        # 5. Insufficient evidence without a valid high-level advisory -> pending (never low)
+        has_complete_meteorological_evidence = all(val is not None for val in [r_90d, seasonal_deficit_pct, spi_val])
+
+        if (is_adv_valid and alert_lvl in ["Red", "Orange"]) or (spi_val is not None and spi_val <= -2.0) or (seasonal_deficit_pct is not None and seasonal_deficit_pct <= -60.0):
             risk_level = "high"
         elif (spi_val is not None and spi_val <= -1.2) or (seasonal_deficit_pct is not None and seasonal_deficit_pct <= -35.0) or (dry_spell_days is not None and dry_spell_days >= 25):
             risk_level = "moderate"
-        else:
+        elif has_complete_meteorological_evidence:
             risk_level = "low"
+        else:
+            # When required long-term meteorological evidence is missing and no active advisory is present,
+            # classify explicitly as pending (insufficient evidence) - never as low risk!
+            risk_level = "pending"
 
         # Indicator provenance variables based on operational mode
         is_live_mode = (mode == "live")
@@ -524,6 +565,77 @@ class DroughtRiskEngine:
                 ),
             ]
 
+        # Primary risk driver attribution with historical replay prefix
+        replay_prefix = f"[Historical Replay: {assess_dt.strftime('%Y-%m-%d')}] " if is_historical_replay else ""
+
+        if is_adv_valid and alert_lvl in ["Red", "Orange"]:
+            if is_historical_replay:
+                primary_risk_driver = (
+                    f"{replay_prefix}Official administrative advisory: {official_adv.get('authority')} {alert_lvl} Alert "
+                    f"(Bulletin {official_adv.get('bulletin_id')}, expired on {official_adv.get('valid_to')} and currently INACTIVE)"
+                )
+            else:
+                primary_risk_driver = (
+                    f"Official administrative advisory: {official_adv.get('authority')} {alert_lvl} Alert "
+                    f"(Bulletin {official_adv.get('bulletin_id')})"
+                )
+        elif spi_val is not None and spi_val <= -2.0:
+            primary_risk_driver = f"{replay_prefix}Meteorological drought: SPI-3 index ({spi_val:.2f}) indicates extreme dryness"
+        elif seasonal_deficit_pct is not None and seasonal_deficit_pct <= -60.0:
+            primary_risk_driver = f"{replay_prefix}Monsoon deficit: Seasonal departure ({seasonal_deficit_pct:.1f}%) exceeds severe drought threshold (-60%)"
+        elif risk_level == "moderate":
+            if spi_val is not None and spi_val <= -1.2:
+                primary_risk_driver = f"{replay_prefix}Meteorological drought: SPI-3 index ({spi_val:.2f}) indicates moderate-to-severe dryness"
+            elif seasonal_deficit_pct is not None and seasonal_deficit_pct <= -35.0:
+                primary_risk_driver = f"{replay_prefix}Monsoon deficit: Seasonal departure ({seasonal_deficit_pct:.1f}%) indicates significant Kharif deficit"
+            elif dry_spell_days is not None and dry_spell_days >= 25:
+                primary_risk_driver = f"{replay_prefix}Agricultural dry spell: {dry_spell_days} consecutive dry days accelerate topsoil desiccation"
+            else:
+                primary_risk_driver = f"{replay_prefix}Cumulative antecedent precipitation and baseline indicators"
+        elif risk_level == "low":
+            primary_risk_driver = f"{replay_prefix}Normal antecedent precipitation and baseline conditions (verified climatological observations)"
+        elif risk_level == "pending":
+            if not is_adv_valid and official_adv.get("bulletin_id"):
+                primary_risk_driver = (
+                    f"{replay_prefix}Insufficient meteorological coverage in live cache "
+                    f"(90-day rainfall uncalculated; advisory {official_adv.get('bulletin_id')} expired on {official_adv.get('valid_to')})"
+                )
+            else:
+                primary_risk_driver = f"{replay_prefix}Insufficient meteorological coverage in calculation window (90-day assessment incomplete)"
+        else:
+            primary_risk_driver = f"{replay_prefix}Assessment pending"
+
+        # Required assessment indicators for drought completeness:
+        # Evaluated strictly on required physical assessment indicators (r_90d, seasonal_deficit, SPI-3),
+        # not every optional display metric.
+        required_drought_indicators = [r_90d, seasonal_deficit_pct, spi_val]
+        if all(val is not None for val in required_drought_indicators):
+            data_completeness: DataCompleteness = "complete"
+            is_data_available = True
+        else:
+            data_completeness: DataCompleteness = "partial"
+            is_data_available = False
+
+        # Dynamic assessment period reflecting actual evidence window
+        if r_90d is None:
+            days_count = len(daily_df)
+            assessment_period = f"Antecedent {days_count}-Day Live NWP Window & Authoritative Advisory"
+        else:
+            assessment_period = "90-Day Seasonal Deficit & SPI-3 Window"
+
+        official_adv_ref = OfficialAdvisoryReference(
+            authority=official_adv.get("authority", "IMD / UPSDMA"),
+            bulletin_id=official_adv.get("bulletin_id"),
+            alert_level=official_adv.get("alert_level", "None"),
+            is_valid=is_adv_valid,
+            is_currently_active=is_currently_active,
+            valid_from=official_adv.get("valid_from"),
+            valid_to=official_adv.get("valid_to"),
+            advisory_text=official_adv.get("advisory_text"),
+            status=official_adv.get("status"),
+            verification_status=official_adv.get("verification_status"),
+        )
+
         scientific_notes = [
             "Meteorological drought does not equate to confirmed agricultural crop loss without ground crop-cutting surveys.",
             f"Mahoba is located on the crystalline Bundelkhand plateau (mean elevation {mean_elev}m MSL, average slope {slope_avg}°), where low groundwater retention exacerbates rainfall deficits.",
@@ -531,10 +643,33 @@ class DroughtRiskEngine:
             "All spatial aggregation is strictly bounded to validated Survey of India / OSM administrative polygon boundaries.",
         ]
 
+        if is_historical_replay:
+            scientific_notes.insert(
+                0,
+                f"HISTORICAL REPLAY: Evaluated for historical date {assess_iso}. "
+                f"Advisory {official_adv.get('bulletin_id')} expired on {official_adv.get('valid_to')} and is INACTIVE operationally."
+            )
+        elif not is_adv_valid and official_adv.get("bulletin_id"):
+            scientific_notes.append(f"Administrative advisory {official_adv.get('bulletin_id')} expired on {official_adv.get('valid_to')} and is not active for this assessment.")
+        elif is_adv_valid:
+            scientific_notes.append(f"Official advisory {official_adv.get('bulletin_id')} is active (valid {official_adv.get('valid_from')} to {official_adv.get('valid_to')}).")
+
         if mode == "live":
             scientific_notes.insert(0, "Live precipitation and ET0 metrics are derived from Open-Meteo NWP representative-point estimates at district centroid.")
             if r_90d is None:
                 scientific_notes.insert(1, "90-day cumulative rainfall and departure are unavailable in live mode due to insufficient historical coverage in the operational NWP cache (requires 90 calendar days).")
+
+        if is_historical_replay:
+            disclaimer = (
+                f"HISTORICAL REPLAY: Evaluates retrospective conditions as of {assess_iso}. "
+                f"Official advisory expired on {official_adv.get('valid_to')} and is INACTIVE operationally. "
+                f"Generated at {now_iso}."
+            )
+        else:
+            disclaimer = (
+                "JalRakshak is a research decision-support prototype. "
+                "Values represent derived transparent indicators, not official government warnings."
+            )
 
         loc_ref = LocationReference(
             location_id=district_info["id"],
@@ -552,11 +687,18 @@ class DroughtRiskEngine:
             location=loc_ref,
             hazard="drought",
             risk_level=risk_level,
-            assessment_period="90-Day Seasonal Deficit & SPI-3 Window",
+            assessment_period=assessment_period,
             generated_at=now_iso,
+            assessment_timestamp=assess_iso,
+            is_historical_replay=is_historical_replay,
             data_mode=data_mode,
             is_demo_data=is_demo,
+            is_data_available=is_data_available,
+            disclaimer=disclaimer,
             indicators=indicators,
             sources=sources,
             scientific_notes=scientific_notes,
+            primary_risk_driver=primary_risk_driver,
+            data_completeness=data_completeness,
+            official_advisory=official_adv_ref,
         )

@@ -96,12 +96,29 @@ export interface LocationReference {
   is_pilot: boolean;
 }
 
+export type DataCompleteness = 'complete' | 'partial' | 'pending';
+
+export interface OfficialAdvisoryReference {
+  authority: string;
+  bulletin_id?: string | null;
+  alert_level: string;
+  is_valid: boolean;
+  is_currently_active?: boolean;
+  valid_from?: string | null;
+  valid_to?: string | null;
+  advisory_text?: string | null;
+  status?: string | null;
+  verification_status?: string | null;
+}
+
 export interface HazardAssessmentResponse {
   location: LocationReference;
   hazard: 'flood' | 'drought' | 'multi_hazard' | 'rainfall';
   risk_level: 'high' | 'moderate' | 'low' | 'nodata' | 'pending';
   assessment_period: string;
   generated_at: string;
+  assessment_timestamp?: string | null;
+  is_historical_replay?: boolean;
   data_mode?: DataMode;
   is_demo_data: boolean;
   is_data_available?: boolean;
@@ -109,6 +126,9 @@ export interface HazardAssessmentResponse {
   indicators: RiskIndicator[];
   sources: SourceMetadata[];
   scientific_notes: string[];
+  primary_risk_driver?: string | null;
+  data_completeness?: DataCompleteness;
+  official_advisory?: OfficialAdvisoryReference | null;
 }
 
 export interface QuickMetricCard {

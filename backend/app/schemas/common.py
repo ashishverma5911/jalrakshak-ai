@@ -92,12 +92,28 @@ class LocationReference(BaseModel):
     region: str
     is_pilot: bool = False
 
+DataCompleteness = Literal["complete", "partial", "pending"]
+
+class OfficialAdvisoryReference(BaseModel):
+    authority: str
+    bulletin_id: Optional[str] = None
+    alert_level: str
+    is_valid: bool
+    is_currently_active: bool = False
+    valid_from: Optional[str] = None
+    valid_to: Optional[str] = None
+    advisory_text: Optional[str] = None
+    status: Optional[str] = None
+    verification_status: Optional[str] = None
+
 class HazardAssessmentResponse(BaseModel):
     location: LocationReference
     hazard: HazardType
     risk_level: Literal["high", "moderate", "low", "nodata", "pending"]
     assessment_period: str
     generated_at: str
+    assessment_timestamp: Optional[str] = None
+    is_historical_replay: bool = False
     data_mode: DataMode = "CACHED_VERIFIED"
     is_demo_data: bool = False
     is_data_available: bool = True
@@ -108,3 +124,6 @@ class HazardAssessmentResponse(BaseModel):
     indicators: List[RiskIndicator]
     sources: List[SourceMetadata]
     scientific_notes: List[str]
+    primary_risk_driver: Optional[str] = None
+    data_completeness: DataCompleteness = "complete"
+    official_advisory: Optional[OfficialAdvisoryReference] = None

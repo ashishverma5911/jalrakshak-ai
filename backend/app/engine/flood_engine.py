@@ -15,6 +15,8 @@ from ..schemas.common import (
     SourceMetadata,
     DataMode,
     DataQualityStatus,
+    DataCompleteness,
+    OfficialAdvisoryReference,
 )
 from ..pipeline.srtm_pipeline import SRTMElevationPipeline
 from ..pipeline.official_alerts import OfficialAlertsPipeline
@@ -44,9 +46,13 @@ class FloodRiskEngine:
         district_info: Dict[str, Any],
         daily_df: pd.DataFrame,
         reference_date: str = "2026-10-28",
-        mode: str = "demo"
+        mode: str = "demo",
+        assessment_timestamp: Optional[str] = None,
     ) -> HazardAssessmentResponse:
-        now_iso = datetime.now(timezone.utc).isoformat()
+        now_dt = datetime.now(timezone.utc)
+        now_iso = now_dt.isoformat()
+        assess_dt = OfficialAlertsPipeline.parse_utc_datetime(assessment_timestamp) if assessment_timestamp else now_dt
+        assess_iso = assess_dt.isoformat()
         is_demo = (mode == "demo")
         if mode == "live":
             data_mode: DataMode = "LIVE_MODEL"
@@ -61,6 +67,8 @@ class FloodRiskEngine:
         # 1. 7-Day and 30-Day Cumulative Rainfall
         r_7d = calculate_cumulative_rainfall(daily_df, window_days=7, reference_date=reference_date)
         r_30d = calculate_cumulative_rainfall(daily_df, window_days=30, reference_date=reference_date)
+
+        is_historical_replay = bool(assessment_timestamp and assess_dt.date() < now_dt.date())
 
         # Check for unlinked / missing telemetry in candidate districts or empty datasets
         if r_7d is None or daily_df.empty or daily_df["rainfall_mm"].dropna().empty or not district_info.get("is_pilot", True):
@@ -195,8 +203,10 @@ class FloodRiskEngine:
                 location=loc_ref,
                 hazard="flood",
                 risk_level="pending",
-                assessment_period="7-Day & 30-Day Antecedent Precipitation Window",
+                assessment_period="Data Ingestion Pending",
                 generated_at=now_iso,
+                assessment_timestamp=assess_iso,
+                is_historical_replay=is_historical_replay,
                 data_mode="DATA_PENDING",
                 is_demo_data=False,
                 is_data_available=False,
@@ -204,6 +214,20 @@ class FloodRiskEngine:
                 indicators=pending_indicators,
                 sources=[],
                 scientific_notes=["Candidate district telemetry unlinked. Risk score is pending scientific ingestion."],
+                primary_risk_driver="Candidate district: observational telemetry unlinked",
+                data_completeness="pending",
+                official_advisory=OfficialAdvisoryReference(
+                    authority="IMD / UPSDMA",
+                    bulletin_id=None,
+                    alert_level="None",
+                    is_valid=False,
+                    is_currently_active=False,
+                    valid_from=None,
+                    valid_to=None,
+                    advisory_text="No live unauthenticated government alert feed integrated for this district.",
+                    status="data_pending",
+                    verification_status="data_pending",
+                ),
             )
 
         # 2. Climatological Normal Baseline (1991–2020)
@@ -245,13 +269,15 @@ class FloodRiskEngine:
             terrain_vuln = 0.88 if district_info.get("elevation_m", 100) < 100 else 0.2
             mean_elev = float(district_info.get("elevation_m", 84.0))
 
-        # 7. Official Advisory from IMD / UPSDMA
-        official_adv = OfficialAlertsPipeline.get_district_official_alert(region_id)
-        alert_lvl = official_adv.get("alert_level", "Green")
+        # 7. Official Advisory from IMD / UPSDMA (evaluated at actual assessment timestamp)
+        official_adv = OfficialAlertsPipeline.validate_district_advisory(region_id, assessment_timestamp=assess_iso)
+        alert_lvl = official_adv.get("alert_level", "None")
+        is_adv_valid = bool(official_adv.get("is_valid", False))
+        is_currently_active = bool(official_adv.get("is_currently_active", False))
 
         # 8. Transparent Risk Classification
-        # High Risk: 7-day rainfall >= 180 mm and terrain vulnerability >= 0.70 OR official alert is Orange/Red
-        if (r_7d >= 180.0 and terrain_vuln >= 0.70) or alert_lvl in ["Red", "Orange"] or heavy_rainfall_days >= 2:
+        # High Risk: 7-day rainfall >= 180 mm and terrain vulnerability >= 0.70 OR active official alert is Orange/Red
+        if (r_7d >= 180.0 and terrain_vuln >= 0.70) or (is_adv_valid and alert_lvl in ["Red", "Orange"]) or heavy_rainfall_days >= 2:
             risk_level = "high"
         elif r_7d >= 80.0 or (percentile_7d is not None and percentile_7d >= 70.0) or (anomaly_7d is not None and anomaly_7d >= 50.0):
             risk_level = "moderate"
@@ -503,12 +529,52 @@ class FloodRiskEngine:
                 ),
             ]
 
+        # Primary risk driver attribution
+        if is_adv_valid and alert_lvl in ["Red", "Orange"]:
+            primary_risk_driver = f"Official administrative advisory: {official_adv.get('authority')} {alert_lvl} Alert (Bulletin {official_adv.get('bulletin_id')})"
+        elif r_7d >= 180.0 and terrain_vuln >= 0.70:
+            primary_risk_driver = f"Hydrological loading: 7-day rainfall ({r_7d:.1f} mm) combined with high terrain vulnerability ({terrain_vuln:.2f})"
+        elif heavy_rainfall_days >= 2:
+            primary_risk_driver = f"Extreme precipitation: {heavy_rainfall_days} heavy rainfall days (>= 64.5 mm/day)"
+        elif risk_level == "moderate":
+            if r_7d >= 80.0:
+                primary_risk_driver = f"Precipitation loading: 7-day rainfall ({r_7d:.1f} mm) exceeds catchment threshold (80 mm)"
+            elif percentile_7d is not None and percentile_7d >= 70.0:
+                primary_risk_driver = f"Historical percentile: 7-day rainfall at {percentile_7d:.1f}th percentile"
+            elif anomaly_7d is not None and anomaly_7d >= 50.0:
+                primary_risk_driver = f"Climatological anomaly: 7-day rainfall departure ({anomaly_7d:.1f}%)"
+            else:
+                primary_risk_driver = "Catchment moisture accumulation"
+        else:
+            if not is_adv_valid and official_adv.get("bulletin_id"):
+                primary_risk_driver = f"No active flood hazard triggers (Advisory {official_adv.get('bulletin_id')} expired on {official_adv.get('valid_to')})"
+            else:
+                primary_risk_driver = "Antecedent precipitation within safe hydrological thresholds"
+
+        official_adv_ref = OfficialAdvisoryReference(
+            authority=official_adv.get("authority", "IMD / UPSDMA"),
+            bulletin_id=official_adv.get("bulletin_id"),
+            alert_level=official_adv.get("alert_level", "None"),
+            is_valid=is_adv_valid,
+            is_currently_active=is_currently_active,
+            valid_from=official_adv.get("valid_from"),
+            valid_to=official_adv.get("valid_to"),
+            advisory_text=official_adv.get("advisory_text"),
+            status=official_adv.get("status"),
+            verification_status=official_adv.get("verification_status"),
+        )
+
         scientific_notes = [
             "Rainfall accumulation alone does NOT compute water inundation or embankment breaching.",
             "River gauge levels and flood warnings are issued exclusively by Central Water Commission (CWC) and UPSDMA.",
             f"Mean elevation in {district_info['name']} is {mean_elev}m MSL with gentle gradient ({srtm_profile.get('slope_degrees_avg', 0.35)}°) in the {district_info['river_basin']}.",
             "All spatial aggregation is strictly bounded to validated Survey of India / OSM administrative polygon boundaries.",
         ]
+
+        if not is_adv_valid and official_adv.get("bulletin_id"):
+            scientific_notes.append(f"Administrative advisory {official_adv.get('bulletin_id')} expired on {official_adv.get('valid_to')} and is not active for this assessment.")
+        elif is_adv_valid:
+            scientific_notes.append(f"Official advisory {official_adv.get('bulletin_id')} is active (valid {official_adv.get('valid_from')} to {official_adv.get('valid_to')}).")
 
         if mode == "live":
             scientific_notes.insert(0, "Live precipitation metrics are derived from Open-Meteo NWP representative-point estimates at district centroid.")
@@ -531,9 +597,15 @@ class FloodRiskEngine:
             risk_level=risk_level,
             assessment_period="7-Day & 30-Day Antecedent Precipitation Window",
             generated_at=now_iso,
+            assessment_timestamp=assess_iso,
+            is_historical_replay=is_historical_replay,
             data_mode=data_mode,
             is_demo_data=is_demo,
+            is_data_available=True,
             indicators=indicators,
             sources=sources,
             scientific_notes=scientific_notes,
+            primary_risk_driver=primary_risk_driver,
+            data_completeness="complete",
+            official_advisory=official_adv_ref,
         )

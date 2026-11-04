@@ -103,11 +103,12 @@ def test_live_mode_short_window_returns_null_and_missing_status(ingestion_servic
     assert s_def.quality_status == "missing"
     assert s_def.is_data_available is False
 
-    # Risk level without official alert escalation must NOT be high due to missing data
+    # Risk level without official alert escalation must NOT be high due to missing data;
+    # with insufficient meteorological coverage, it must evaluate to pending, never low.
     from unittest.mock import patch
     with patch("app.engine.drought_engine.OfficialAlertsPipeline.get_district_official_alert", return_value={"alert_level": "Green"}):
         result_green = DroughtRiskEngine.evaluate(m_info, df_8d, reference_date="2026-10-28", mode="live")
-        assert result_green.risk_level == "low", f"Expected 'low' risk with Green advisory and missing data, got {result_green.risk_level}"
+        assert result_green.risk_level == "pending", f"Expected 'pending' risk with Green advisory and missing data, got {result_green.risk_level}"
 
 
 def test_regression_audited_false_100_percent_anomaly_prevented(ingestion_service):
